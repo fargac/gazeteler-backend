@@ -59,10 +59,9 @@ def get_news_config():
 @app.route('/piyasa-verileri')
 def get_market_data():
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
 
-    # 1. Yanıltmayan, Dürüst Şablon ("-" kullanıyoruz)
     result = {
         "USD": "-",
         "EUR": "-",
@@ -72,30 +71,32 @@ def get_market_data():
         "W_DESC": "-"
     }
 
-    # 2. SADECE FİNANS VERİSİNİ ÇEKMEYİ DENE
+    # 1. FİNANS VERİLERİ (V3 API Anahtarları Güncellendi)
     try:
         r_finans = requests.get('https://finans.truncgil.com/v3/today.json', headers=headers, timeout=4)
         data_finans = r_finans.json()
         
         result["USD"] = data_finans.get("USD", {}).get("Selling", result["USD"])
         result["EUR"] = data_finans.get("EUR", {}).get("Selling", result["EUR"])
-        result["ALTIN"] = data_finans.get("Gram Altın", {}).get("Selling", result["ALTIN"])
-        result["BIST"] = data_finans.get("BIST 100", {}).get("Selling", result["BIST"])
+        
+        # DİKKAT: V3 API'deki yeni anahtar isimleri kullanıldı!
+        result["ALTIN"] = data_finans.get("gram-altin", {}).get("Selling", result["ALTIN"])
+        result["BIST"] = data_finans.get("bist-100", {}).get("Selling", result["BIST"])
     except Exception as e:
-        print(f"Finans API Hatası (Es geçildi): {e}")
+        print(f"Finans API Hatası: {e}")
 
-    # 3. SADECE HAVA DURUMUNU ÇEKMEYİ DENE
+    # 2. HAVA DURUMU (Render'da bloklanmayan Open-Meteo API'ye geçtik)
     try:
-        r_weather = requests.get('https://wttr.in/Istanbul?format=j1', headers=headers, timeout=4)
+        # İstanbul'un enlem ve boylamı (41.01, 28.95)
+        r_weather = requests.get('https://api.open-meteo.com/v1/forecast?latitude=41.0138&longitude=28.9497&current_weather=true', timeout=4)
         data_weather = r_weather.json()
         
-        temp = data_weather['current_condition'][0]['temp_C']
-        desc = data_weather['current_condition'][0]['lang_tr'][0]['value'] if 'lang_tr' in data_weather['current_condition'][0] else "Açık"
+        temp = data_weather.get('current_weather', {}).get('temperature', '-')
         
         result["WEATHER"] = f"{temp}°C"
-        result["W_DESC"] = desc.upper()
+        result["W_DESC"] = "İSTANBUL" # Open-Meteo direkt derece verir, açıklamayı sabitliyoruz
     except Exception as e:
-        print(f"Hava Durumu API Hatası (Es geçildi): {e}")
+        print(f"Hava Durumu API Hatası: {e}")
 
     return jsonify(result), 200
 # 7. Uygulamayı Çalıştır
