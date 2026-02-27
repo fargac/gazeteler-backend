@@ -1,8 +1,6 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_cors import CORS
-import concurrent.futures
-import random
-import html
+import requests
 
 # 1. Flask Uygulamasını ve CORS Ayarlarını Tanımla
 app = Flask(__name__)
@@ -14,12 +12,6 @@ def get_config():
     return jsonify([])
 
 
-
-@app.route('/taraftar-haber/<takim_slug>', methods=['GET'])
-def get_taraftar_news(takim_slug):
-    print(f"⚽ Taraftar Radarı Taranıyor: {takim_slug}")
-    data = fotomac.fetch(takim_slug)
-    return jsonify(data)
 
 @app.route('/haber-kaynaklari', methods=['GET'])
 def get_news_config():
@@ -63,7 +55,6 @@ def get_news_config():
         {"id": "ekonomim", "name": "Ekonomim", "rss": "https://www.ekonomim.com/rss"},
     ]
     return jsonify(config)
-import requests # Eğer yoksa en tepeye ekle
 
 @app.route('/piyasa-verileri')
 def get_market_data():
