@@ -1,2 +1,10 @@
+# "test" ile başlayan her şeyi (dosya veya klasör) engelle
+test*
+
+# Python gereksizleri
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Sanal ortam
+venv/
+.venv/
