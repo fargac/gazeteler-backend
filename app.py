@@ -1,6 +1,11 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 import requests
+import yfinance as yf 
+from time import time
+from datetime import datetime
+import pytz
+
 
 # 1. Flask Uygulamasını ve CORS Ayarlarını Tanımla
 app = Flask(__name__)
@@ -56,69 +61,145 @@ def get_news_config():
     ]
     return jsonify(config)
 
-from flask import Flask, jsonify
-from flask_cors import CORS
-import requests
-import yfinance as yf # 🚀 YENİ: Yahoo Finance eklendi!
 
-# ... (Uygulama tanımlamaları ve haber rotaları aynı kalıyor) ...
+
+
+
+cache = {}
+CACHE_DURATION = 60  # saniye
+
+def format_tr(value):
+    return (
+        f"{value:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
+    )
 
 @app.route('/piyasa-verileri')
 def get_market_data():
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
+
+    # 📍 Kullanıcıdan koordinat al (fallback İstanbul)
+    lat = request.args.get("lat", "41.0138")
+    lon = request.args.get("lon", "28.9497")
+
+    cache_key = f"{lat}-{lon}"
+
+    # 🔥 Cache kontrolü
+    if cache_key in cache:
+        if time() - cache[cache_key]["time"] < CACHE_DURATION:
+            return jsonify(cache[cache_key]["data"]), 200
 
     result = {
-        "USD": "-", "EUR": "-", "ALTIN": "-", 
-        "BIST": "-", "WEATHER": "-", "W_DESC": "-"
+        "USD": "-",
+        "EUR": "-",
+        "ALTIN": "-",
+        "BIST": "-",
+        "WEATHER": "-",
+        "W_DESC": "-",
+        "MARKET_OPEN": False
     }
 
-    # 1. GLOBAL FİNANS (Yahoo Finance)
+    # =========================
+    # 1️⃣ YAHOO FINANCE
+    # =========================
     try:
-        # Fonksiyon: Verilen sembolün son kapanış fiyatını güvenli şekilde çeker
-        def get_price(symbol):
+        symbols = ["TRY=X", "EURTRY=X", "XU100.IS", "XAU=X"]
+
+        data = yf.download(
+            symbols,
+            period="7d",
+            interval="1d",
+            group_by="ticker",
+            progress=False
+        )
+
+        def get_close(symbol):
             try:
-                data = yf.Ticker(symbol).history(period="1d")
-                return data['Close'].iloc[-1]
+                closes = data[symbol]["Close"].dropna()
+                if not closes.empty:
+                    return closes.iloc[-1]
+                return None
             except:
                 return None
 
-        # Fiyatları çekiyoruz
-        usd_price = get_price("TRY=X")      # USD/TRY
-        eur_price = get_price("EURTRY=X")   # EUR/TRY
-        bist_price = get_price("XU100.IS")  # BIST 100
-        ons_price = get_price("XAU=X")      # Altın Ons (USD)
+        def get_close_with_status(symbol):
+            try:
+                closes = data[symbol]["Close"].dropna()
+                if closes.empty:
+                    return None, False
 
-        if usd_price:
+                last_date = closes.index[-1].date()
+
+                turkey_tz = pytz.timezone("Europe/Istanbul")
+                today = datetime.now(turkey_tz).date()
+
+                price = closes.iloc[-1]
+
+                if last_date == today:
+                    return price, True
+                else:
+                    return price, False
+
+            except:
+                return None, False
+
+        # Döviz
+        usd_price = get_close("TRY=X")
+        eur_price = get_close("EURTRY=X")
+
+        # BIST
+        bist_price, market_open = get_close_with_status("XU100.IS")
+
+        # Ons
+        ons_price = get_close("XAU=X")
+
+        if usd_price is not None:
             result["USD"] = f"{usd_price:.2f}"
-        if eur_price:
+
+        if eur_price is not None:
             result["EUR"] = f"{eur_price:.2f}"
-        if bist_price:
-            # BIST için binlik ayırıcı (Örn: 9.240,50)
-            result["BIST"] = f"{bist_price:,.2f}".replace(',', '.')
-        
-        # 🧠 SENIOR HİLESİ: Gram Altın Hesaplama
-        # 1 Ons Altın = 31.1034 gramdır. Formül: (Ons Fiyatı * Dolar Kuru) / 31.1034
-        if ons_price and usd_price:
+
+        if bist_price is not None:
+            result["BIST"] = format_tr(bist_price)
+
+        result["MARKET_OPEN"] = market_open
+
+        # 🧠 Gram Altın
+        if ons_price is not None and usd_price is not None:
             gram_altin = (ons_price * usd_price) / 31.1034
-            result["ALTIN"] = f"{gram_altin:,.2f}".replace(',', '.')
+            result["ALTIN"] = format_tr(gram_altin)
 
     except Exception as e:
-        print(f"Yahoo Finance API Hatası: {e}")
+        print("Finance error:", e)
 
-    # 2. HAVA DURUMU (Yine tamamen izole, çökerse borsayı etkilemez)
+    # =========================
+    # 2️⃣ HAVA DURUMU
+    # =========================
     try:
-        # İstanbul'un koordinatları: Enlem 41.01, Boylam 28.95
-        r_weather = requests.get('https://api.open-meteo.com/v1/forecast?latitude=41.0138&longitude=28.9497&current_weather=true', timeout=5)
-        data_weather = r_weather.json()
-        
-        temp = data_weather.get('current_weather', {}).get('temperature', '-')
-        
-        result["WEATHER"] = f"{temp}°C"
-        result["W_DESC"] = "İSTANBUL" # Open-Meteo direkt net derece verir
+        weather_url = (
+            f"https://api.open-meteo.com/v1/forecast?"
+            f"latitude={lat}&longitude={lon}&current_weather=true"
+        )
+
+        r_weather = requests.get(weather_url, timeout=5)
+
+        if r_weather.status_code == 200:
+            data_weather = r_weather.json()
+            temp = data_weather.get("current_weather", {}).get("temperature")
+
+            if temp is not None:
+                result["WEATHER"] = f"{temp}°C"
+                result["W_DESC"] = f"{lat},{lon}"
+
     except Exception as e:
-        print(f"Hava Durumu API Hatası: {e}")
+        print("Weather error:", e)
+
+    # 🔥 Cache güncelle
+    cache[cache_key] = {
+        "data": result,
+        "time": time()
+    }
 
     return jsonify(result), 200
 
