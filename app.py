@@ -56,49 +56,73 @@ def get_news_config():
     ]
     return jsonify(config)
 
+from flask import Flask, jsonify
+from flask_cors import CORS
+import requests
+import yfinance as yf # 🚀 YENİ: Yahoo Finance eklendi!
+
+# ... (Uygulama tanımlamaları ve haber rotaları aynı kalıyor) ...
+
 @app.route('/piyasa-verileri')
 def get_market_data():
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
 
     result = {
-        "USD": "-",
-        "EUR": "-",
-        "ALTIN": "-",
-        "BIST": "-",
-        "WEATHER": "-",
-        "W_DESC": "-"
+        "USD": "-", "EUR": "-", "ALTIN": "-", 
+        "BIST": "-", "WEATHER": "-", "W_DESC": "-"
     }
 
-    # 1. FİNANS VERİLERİ (V3 API Anahtarları Güncellendi)
+    # 1. GLOBAL FİNANS (Yahoo Finance)
     try:
-        r_finans = requests.get('https://finans.truncgil.com/v3/today.json', headers=headers, timeout=4)
-        data_finans = r_finans.json()
-        
-        result["USD"] = data_finans.get("USD", {}).get("Selling", result["USD"])
-        result["EUR"] = data_finans.get("EUR", {}).get("Selling", result["EUR"])
-        
-        # DİKKAT: V3 API'deki yeni anahtar isimleri kullanıldı!
-        result["ALTIN"] = data_finans.get("gram-altin", {}).get("Selling", result["ALTIN"])
-        result["BIST"] = data_finans.get("bist-100", {}).get("Selling", result["BIST"])
-    except Exception as e:
-        print(f"Finans API Hatası: {e}")
+        # Fonksiyon: Verilen sembolün son kapanış fiyatını güvenli şekilde çeker
+        def get_price(symbol):
+            try:
+                data = yf.Ticker(symbol).history(period="1d")
+                return data['Close'].iloc[-1]
+            except:
+                return None
 
-    # 2. HAVA DURUMU (Render'da bloklanmayan Open-Meteo API'ye geçtik)
+        # Fiyatları çekiyoruz
+        usd_price = get_price("TRY=X")      # USD/TRY
+        eur_price = get_price("EURTRY=X")   # EUR/TRY
+        bist_price = get_price("XU100.IS")  # BIST 100
+        ons_price = get_price("XAU=X")      # Altın Ons (USD)
+
+        if usd_price:
+            result["USD"] = f"{usd_price:.2f}"
+        if eur_price:
+            result["EUR"] = f"{eur_price:.2f}"
+        if bist_price:
+            # BIST için binlik ayırıcı (Örn: 9.240,50)
+            result["BIST"] = f"{bist_price:,.2f}".replace(',', '.')
+        
+        # 🧠 SENIOR HİLESİ: Gram Altın Hesaplama
+        # 1 Ons Altın = 31.1034 gramdır. Formül: (Ons Fiyatı * Dolar Kuru) / 31.1034
+        if ons_price and usd_price:
+            gram_altin = (ons_price * usd_price) / 31.1034
+            result["ALTIN"] = f"{gram_altin:,.2f}".replace(',', '.')
+
+    except Exception as e:
+        print(f"Yahoo Finance API Hatası: {e}")
+
+    # 2. HAVA DURUMU (Yine tamamen izole, çökerse borsayı etkilemez)
     try:
-        # İstanbul'un enlem ve boylamı (41.01, 28.95)
-        r_weather = requests.get('https://api.open-meteo.com/v1/forecast?latitude=41.0138&longitude=28.9497&current_weather=true', timeout=4)
+        # İstanbul'un koordinatları: Enlem 41.01, Boylam 28.95
+        r_weather = requests.get('https://api.open-meteo.com/v1/forecast?latitude=41.0138&longitude=28.9497&current_weather=true', timeout=5)
         data_weather = r_weather.json()
         
         temp = data_weather.get('current_weather', {}).get('temperature', '-')
         
         result["WEATHER"] = f"{temp}°C"
-        result["W_DESC"] = "İSTANBUL" # Open-Meteo direkt derece verir, açıklamayı sabitliyoruz
+        result["W_DESC"] = "İSTANBUL" # Open-Meteo direkt net derece verir
     except Exception as e:
         print(f"Hava Durumu API Hatası: {e}")
 
     return jsonify(result), 200
+
+# ... (app.run kısmı aynı kalıyor) ...
 # 7. Uygulamayı Çalıştır
 if __name__ == '__main__':
     # Port'u ortam değişkeninden al, yoksa 5000 kullan (Deploy için şart!)
