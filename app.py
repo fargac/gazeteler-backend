@@ -58,30 +58,46 @@ def get_news_config():
 
 @app.route('/piyasa-verileri')
 def get_market_data():
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    }
+
+    # 1. Yanıltmayan, Dürüst Şablon ("-" kullanıyoruz)
+    result = {
+        "USD": "-",
+        "EUR": "-",
+        "ALTIN": "-",
+        "BIST": "-",
+        "WEATHER": "-",
+        "W_DESC": "-"
+    }
+
+    # 2. SADECE FİNANS VERİSİNİ ÇEKMEYİ DENE
     try:
-        # 1. Döviz Verileri
-        r_finans = requests.get('https://finans.truncgil.com/today.json')
+        r_finans = requests.get('https://finans.truncgil.com/v3/today.json', headers=headers, timeout=4)
         data_finans = r_finans.json()
         
-        # 2. Hava Durumu (Hızlı ve anahtarsız bir servis örneği)
-        # Not: wttr.in servisi JSON formatında çok temiz veri verir
-        r_weather = requests.get('https://wttr.in/Istanbul?format=j1')
+        result["USD"] = data_finans.get("USD", {}).get("Selling", result["USD"])
+        result["EUR"] = data_finans.get("EUR", {}).get("Selling", result["EUR"])
+        result["ALTIN"] = data_finans.get("Gram Altın", {}).get("Selling", result["ALTIN"])
+        result["BIST"] = data_finans.get("BIST 100", {}).get("Selling", result["BIST"])
+    except Exception as e:
+        print(f"Finans API Hatası (Es geçildi): {e}")
+
+    # 3. SADECE HAVA DURUMUNU ÇEKMEYİ DENE
+    try:
+        r_weather = requests.get('https://wttr.in/Istanbul?format=j1', headers=headers, timeout=4)
         data_weather = r_weather.json()
+        
         temp = data_weather['current_condition'][0]['temp_C']
         desc = data_weather['current_condition'][0]['lang_tr'][0]['value'] if 'lang_tr' in data_weather['current_condition'][0] else "Açık"
-
-        result = {
-            "USD": data_finans.get("USD", {}).get("Selling", "0.00"),
-            "EUR": data_finans.get("EUR", {}).get("Selling", "0.00"),
-            "ALTIN": data_finans.get("Gram Altın", {}).get("Selling", "0.00"),
-            "BIST": data_finans.get("BIST 100", {}).get("Selling", "0.00"),
-            "WEATHER": f"{temp}°C",
-            "W_DESC": desc.upper()
-        }
-        return jsonify(result)
+        
+        result["WEATHER"] = f"{temp}°C"
+        result["W_DESC"] = desc.upper()
     except Exception as e:
-        print(f"Hata: {e}")
-        return jsonify({"error": "Veri alınamadı"}), 500
+        print(f"Hava Durumu API Hatası (Es geçildi): {e}")
+
+    return jsonify(result), 200
 # 7. Uygulamayı Çalıştır
 if __name__ == '__main__':
     # Port'u ortam değişkeninden al, yoksa 5000 kullan (Deploy için şart!)
