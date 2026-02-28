@@ -82,6 +82,23 @@ def get_market_data():
 
     return jsonify(result), 200
 
+# --- 2. PİYASA VE HAVA DURUMU KONFİGÜRASYONU (REMOTE CONFIG) ---
+@app.route('/config/piyasa', methods=['GET'])
+def get_piyasa_config():
+    config = {
+        "market_api": "https://finans.truncgil.com/today.json",
+        "market_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        "market_keys": {
+            "usd": "USD",
+            "eur": "EUR",
+            "gold": "gram-altin",
+            "ceyrek": "ceyrek-altin"
+        },
+        "weather_api_base": "https://api.open-meteo.com/v1/forecast"
+    }
+    return jsonify(config), 200
 if __name__ == '__main__':
     import os
     app.run(host='0.0.0.0', port=5000)
