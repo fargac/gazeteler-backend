@@ -99,6 +99,35 @@ def get_piyasa_config():
         "weather_api_base": "https://api.open-meteo.com/v1/forecast"
     }
     return jsonify(config), 200
+
+# app.py içindeki get_mansetler_config fonksiyonu için tam liste:
+@app.route('/config/mansetler', methods=['GET'])
+def get_mansetler_config():
+    base = "https://i13.haber7.net/haber7/gazete"
+    config = [
+        {"id": "hurriyet", "name": "Hürriyet", "pattern": f"{base}/hurriyet"},
+        {"id": "sabah", "name": "Sabah", "pattern": f"{base}/sabah"},
+        {"id": "sozcu", "name": "Sözcü", "pattern": f"{base}/sozcu"},
+        {"id": "milliyet", "name": "Milliyet", "pattern": f"{base}/milliyet"},
+        {"id": "turkiye", "name": "Türkiye", "pattern": f"{base}/turkiye"},
+        {"id": "aksam", "name": "Akşam", "pattern": f"{base}/aksam"},
+        {"id": "yeni-safak", "name": "Yeni Şafak", "pattern": f"{base}/yeni-safak"},
+        {"id": "yeni-akit", "name": "Yeni Akit", "pattern": f"{base}/yeni-akit"},
+        {"id": "dirilis-postasi", "name": "Diriliş P.", "pattern": f"{base}/dirilis-postasi"},
+        {"id": "milat", "name": "Milat", "pattern": f"{base}/milat"},
+        {"id": "turkgun", "name": "Türkgün", "pattern": f"{base}/turkgun"},
+        {"id": "yeni-birlik", "name": "Yeni Birlik", "pattern": f"{base}/yeni-birlik"},
+        {"id": "milli-gazete", "name": "Milli Gazete", "pattern": f"{base}/milli-gazete"},
+        {"id": "dunya", "name": "Dünya", "pattern": f"{base}/dunya"},
+        {"id": "yenicag", "name": "Yeniçağ", "pattern": f"{base}/yenicag"},
+        {"id": "yenisoz", "name": "Yenisöz", "pattern": f"{base}/yenisoz"},
+        {"id": "aydinlik", "name": "Aydınlık", "pattern": f"{base}/aydinlik"},
+        {"id": "dogru-haber", "name": "Doğru Haber", "pattern": f"{base}/dogru-haber"},
+        {"id": "takvim-gazetesi", "name": "Takvim", "pattern": f"{base}/takvim-gazetesi"},
+        {"id": "fotomac", "name": "Fotomaç", "pattern": f"{base}/fotomac"},
+        {"id": "fanatik", "name": "Fanatik", "pattern": f"{base}/fanatik"}
+    ]
+    return jsonify({"mansetler": config}), 200
 if __name__ == '__main__':
     import os
     app.run(host='0.0.0.0', port=5000)
