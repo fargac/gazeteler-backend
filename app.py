@@ -90,11 +90,11 @@ def get_piyasa_config():
         "market_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
-        "market_keys": {
-            "usd": "USD",
-            "eur": "EUR",
-            "gold": "gram-altin",
-            "ceyrek": "ceyrek-altin"
+        "market_rules": {
+            "usd": {"key": "USD", "subKey": "Satış", "format": "tr_currency"},
+            "eur": {"key": "EUR", "subKey": "Satış", "format": "tr_currency"},
+            "gold": {"key": "gram-altin", "subKey": "Satış", "format": "tr_currency"},
+            "ceyrek": {"key": "ceyrek-altin", "subKey": "Satış", "format": "tr_currency"}
         },
         "weather_api_base": "https://api.open-meteo.com/v1/forecast"
     }
