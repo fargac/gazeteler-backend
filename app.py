@@ -98,31 +98,32 @@ def get_piyasa_config():
     return jsonify(config), 200
 
 # --- 4. MANŞETLER KONFİGÜRASYONU ---
+# --- 4. MANŞETLER KONFİGÜRASYONU ---
 @app.route('/config/mansetler', methods=['GET'])
 def get_mansetler_config():
     base = "https://i13.haber7.net/haber7/gazete"
     config = [
-        {"id": "hurriyet", "name": "Hürriyet", "pattern": f"{base}/hurriyet"},
-        {"id": "sabah", "name": "Sabah", "pattern": f"{base}/sabah"},
-        {"id": "sozcu", "name": "Sözcü", "pattern": f"{base}/sozcu"},
-        {"id": "milliyet", "name": "Milliyet", "pattern": f"{base}/milliyet"},
-        {"id": "turkiye", "name": "Türkiye", "pattern": f"{base}/turkiye"},
-        {"id": "aksam", "name": "Akşam", "pattern": f"{base}/aksam"},
-        {"id": "yeni_safak", "name": "Yeni Şafak", "pattern": f"{base}/yeni-safak"},
-        {"id": "yeni_akit", "name": "Yeni Akit", "pattern": f"{base}/yeni-akit"},
-        {"id": "dirilis_postasi", "name": "Diriliş P.", "pattern": f"{base}/dirilis-postasi"},
-        {"id": "milat", "name": "Milat", "pattern": f"{base}/milat"},
-        {"id": "turkgun", "name": "Türkgün", "pattern": f"{base}/turkgun"},
-        {"id": "yeni_birlik", "name": "Yeni Birlik", "pattern": f"{base}/yeni-birlik"},
-        {"id": "milli_gazete", "name": "Milli Gazete", "pattern": f"{base}/milli-gazete"},
-        {"id": "dunya", "name": "Dünya", "pattern": f"{base}/dunya"},
-        {"id": "yeni_cag", "name": "Yeniçağ", "pattern": f"{base}/yenicag"},
-        {"id": "yeni_soz", "name": "Yenisöz", "pattern": f"{base}/yenisoz"},
-        {"id": "aydinlik", "name": "Aydınlık", "pattern": f"{base}/aydinlik"},
-        {"id": "dogru-haber", "name": "Doğru Haber", "pattern": f"{base}/dogru-haber"},
-        {"id": "takvim", "name": "Takvim", "pattern": f"{base}/takvim-gazetesi"},
-        {"id": "fotomac", "name": "Fotomaç", "pattern": f"{base}/fotomac"},
-        {"id": "fanatik", "name": "Fanatik", "pattern": f"{base}/fanatik"}
+        {"id": "manset_hurriyet", "name": "Hürriyet", "pattern": f"{base}/hurriyet"},
+        {"id": "manset_sabah", "name": "Sabah", "pattern": f"{base}/sabah"},
+        {"id": "manset_sozcu", "name": "Sözcü", "pattern": f"{base}/sozcu"},
+        {"id": "manset_milliyet", "name": "Milliyet", "pattern": f"{base}/milliyet"},
+        {"id": "manset_turkiye", "name": "Türkiye", "pattern": f"{base}/turkiye"},
+        {"id": "manset_aksam", "name": "Akşam", "pattern": f"{base}/aksam"},
+        {"id": "manset_yeni_safak", "name": "Yeni Şafak", "pattern": f"{base}/yeni-safak"},
+        {"id": "manset_yeni_akit", "name": "Yeni Akit", "pattern": f"{base}/yeni-akit"},
+        {"id": "manset_dirilis_postasi", "name": "Diriliş P.", "pattern": f"{base}/dirilis-postasi"},
+        {"id": "manset_milat", "name": "Milat", "pattern": f"{base}/milat"},
+        {"id": "manset_turkgun", "name": "Türkgün", "pattern": f"{base}/turkgun"},
+        {"id": "manset_yeni_birlik", "name": "Yeni Birlik", "pattern": f"{base}/yeni-birlik"},
+        {"id": "manset_milli_gazete", "name": "Milli Gazete", "pattern": f"{base}/milli-gazete"},
+        {"id": "manset_dunya", "name": "Dünya", "pattern": f"{base}/dunya"},
+        {"id": "manset_yeni_cag", "name": "Yeniçağ", "pattern": f"{base}/yenicag"},
+        {"id": "manset_yeni_soz", "name": "Yenisöz", "pattern": f"{base}/yenisoz"},
+        {"id": "manset_aydinlik", "name": "Aydınlık", "pattern": f"{base}/aydinlik"},
+        {"id": "manset_dogru-haber", "name": "Doğru Haber", "pattern": f"{base}/dogru-haber"},
+        {"id": "manset_takvim", "name": "Takvim", "pattern": f"{base}/takvim-gazetesi"},
+        {"id": "manset_fotomac", "name": "Fotomaç", "pattern": f"{base}/fotomac"},
+        {"id": "manset_fanatik", "name": "Fanatik", "pattern": f"{base}/fanatik"}
     ]
     return jsonify({"mansetler": config}), 200
 
