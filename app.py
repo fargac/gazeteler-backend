@@ -105,7 +105,6 @@ def get_mansetler_config():
     config = [
         {"id": "manset_hurriyet", "name": "Hürriyet", "pattern": f"{base}/hurriyet"},
         {"id": "manset_sabah", "name": "Sabah", "pattern": f"{base}/sabah"},
-        {"id": "manset_sozcu", "name": "Sözcü", "pattern": f"{base}/sozcu"},
         {"id": "manset_milliyet", "name": "Milliyet", "pattern": f"{base}/milliyet"},
         {"id": "manset_turkiye", "name": "Türkiye", "pattern": f"{base}/turkiye"},
         {"id": "manset_aksam", "name": "Akşam", "pattern": f"{base}/aksam"},
@@ -122,8 +121,8 @@ def get_mansetler_config():
         {"id": "manset_aydinlik", "name": "Aydınlık", "pattern": f"{base}/aydinlik"},
         {"id": "manset_dogru-haber", "name": "Doğru Haber", "pattern": f"{base}/dogru-haber"},
         {"id": "manset_takvim", "name": "Takvim", "pattern": f"{base}/takvim-gazetesi"},
+        {"id": "manset_fanatik", "name": "Fanatik", "pattern": f"{base}/fanatik"},
         {"id": "manset_fotomac", "name": "Fotomaç", "pattern": f"{base}/fotomac"},
-        {"id": "manset_fanatik", "name": "Fanatik", "pattern": f"{base}/fanatik"}
     ]
     return jsonify({"mansetler": config}), 200
 
