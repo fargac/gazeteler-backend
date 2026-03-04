@@ -51,7 +51,7 @@ def get_news_config():
     {
         "id": "galatasaray",
         "name": "Galatasaray",
-        "rss": "https://www.fotomac.com.tr/rss/besiktas.xml",
+        "rss": "https://www.fotomac.com.tr/rss/galatasaray.xml",
         "rules": {
             "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
             "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
