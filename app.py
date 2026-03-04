@@ -18,7 +18,7 @@ def get_news_config():
         {"id": "sozcu", "name": "Sözcü", "rss": "https://www.sozcu.com.tr/feeds-son-dakika"},
         {"id": "sabah", "name": "Sabah", "rss": "https://www.sabah.com.tr/rss/anasayfa.xml"},
         {"id": "milliyet", "name": "Milliyet", "rss": "https://www.milliyet.com.tr/rss/rssnew/sondakikarss.xml"},
-        {"id": "haberturk", "name": "Habertürk", "rss": "https://www.haberturk.com/rss"},
+        {"id": "haberturk", "name": "Habertürk", "rss": "https://www.haberturk.com/rss/manset.xml"},
         {"id": "ensonhaber", "name": "En Son Haber", "rss": "https://www.ensonhaber.com/rss/ensonhaber.xml"},
         {"id": "mynet", "name": "Mynet", "rss": "https://www.mynet.com/haber/rss/sondakika"},
         {"id": "sondakika", "name": "Son Dakika", "rss": "https://rss.sondakika.com/rss_standart.asp"},
