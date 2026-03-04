@@ -9,9 +9,10 @@ CORS(app)
 # --- 1. TÜM HABER KAYNAKLARI (16 Adet - Tam Liste) ---
 @app.route('/haber-kaynaklari', methods=['GET'])
 def get_news_config():
+    # HATALI SÜSLÜ PARANTEZ DÜZELTİLDİ, KÖŞELİ PARANTEZ (LİSTE) YAPILDI
     config = [
       
-{
+    {
         "id": "fenerbahce",
         "name": "Fenerbahçe",
         "rss": "https://www.fotomac.com.tr/rss/fenerbahce.xml",
@@ -38,12 +39,24 @@ def get_news_config():
     {
         "id": "besiktas",
         "name": "Beşiktaş",
-        "rss": "https://www.besiktas.com.tr/rss",
+        "rss": "https://www.fotomac.com.tr/rss/besiktas.xml",
         "rules": {
             "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
             "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
             "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "url=[\"'](https?:\\/\\/.*?\\.(?:jpg|jpeg|png|webp|gif|bmp).*?)[\"']",
+            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']", # <-- FOTOMAÇ FORMATINA DÜZELTİLDİ
+            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+        }
+    },
+    {
+        "id": "galatasaray",
+        "name": "Galatasaray",
+        "rss": "https://www.fotomac.com.tr/rss/besiktas.xml",
+        "rules": {
+            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']", # <-- FOTOMAÇ FORMATINA DÜZELTİLDİ
             "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
         }
     },
@@ -156,18 +169,6 @@ def get_news_config():
         }
     },
     {
-        "id": "cnnturk",
-        "name": "CNN Türk",
-        "rss": "https://www.cnnturk.com/feed/rss/all/news",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "url=[\"'](https?:\\/\\/.*?\\.(?:jpg|jpeg|png|webp|gif|bmp).*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
         "id": "ntvspor",
         "name": "NTV Spor",
         "rss": "https://www.ntvspor.net/rss/anasayfa",
@@ -203,8 +204,6 @@ def get_news_config():
             "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
         }
     }
-
-
     ]
     return jsonify(config)
 
@@ -276,7 +275,6 @@ def get_piyasa_config():
     }
     return jsonify(config), 200
 
-# --- 4. MANŞETLER KONFİGÜRASYONU ---
 # --- 4. MANŞETLER KONFİGÜRASYONU ---
 @app.route('/config/mansetler', methods=['GET'])
 def get_mansetler_config():
