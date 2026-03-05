@@ -329,7 +329,7 @@ def get_kesfet_config():
             {"id": "dunya", "name": "Dünya", "link": "https://m.dunya.com"},
             {"id": "birgun", "name": "Birgün", "link": "http://www.birgun.net"},
             {"id": "evrensel", "name": "Evrensel", "link": "https://www.evrensel.net"},
-            {"id": "aydinlik", "name": "Aydınlık", "link": "http://www.aydinlikgazete.com"},
+            {"id": "aydinlik", "name": "Aydınlık", "link": "https://www.aydinlik.com.tr/"},
             {"id": "sol", "name": "Sol", "link": "https://haber.sol.org.tr/"},
             {"id": "yeni_asya", "name": "Yeni Asya", "link": "https://www.yeniasya.com.tr"},
             {"id": "milat", "name": "Milat", "link": "http://www.milatgazetesi.com"},
