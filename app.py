@@ -662,6 +662,41 @@ def get_takimlar_config():
     }
     return jsonify(config), 200
 
+# 7. TÜM VERİLERİ BİRLEŞTİREN ANA MOTOR (BEST PRACTICE)
+def get_all_configs_data():
+    # Eski fonksiyonlarından verileri çekip paketliyoruz
+    haberler_res = get_news_config()
+    piyasa_res, _ = get_piyasa_config()
+    mansetler_res, _ = get_mansetler_config()
+    kesfet_res, _ = get_kesfet_config()
+    takimlar_res, _ = get_takimlar_config()
+    
+    return {
+        "haber_kaynaklari": haberler_res.json,
+        "piyasa": piyasa_res.json,
+        "mansetler": mansetler_res.json.get("mansetler", []),
+        "kesfet": kesfet_res.json,
+        "takimlar": takimlar_res.json.get("takimlar", [])
+    }
+
+def generate_version(data):
+    config_str = json.dumps(data, sort_keys=True)
+    return hashlib.md5(config_str.encode()).hexdigest()
+
+# 8. CİHAZLARIN VERSİYON KONTROL UÇ NOKTASI
+@app.route('/config/version', methods=['GET'])
+def get_version():
+    data = get_all_configs_data()
+    version_hash = generate_version(data)
+    return jsonify({"version": version_hash}), 200
+
+# 9. GÜNCELLEME GEREKTİĞİNDE TÜM VERİYİ DÖNEN UÇ NOKTA
+@app.route('/config/all', methods=['GET'])
+def get_all_configs():
+    data = get_all_configs_data()
+    data["version"] = generate_version(data)
+    return jsonify(data), 200
+
 if __name__ == '__main__':
     import os
     app.run(host='0.0.0.0', port=5000)
