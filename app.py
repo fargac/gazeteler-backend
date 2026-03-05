@@ -662,6 +662,15 @@ def get_takimlar_config():
     }
     return jsonify(config), 200
 
+# --- 6.5 REKLAM (ADS) KONFİGÜRASYONU ---
+@app.route('/config/ads', methods=['GET'])
+def get_ads_config():
+    config = {
+        "ad_frequency": 15,          # Kaç haber okunduğunda geçiş reklamı çıkacak (Örn: 12)
+        "app_open_cooldown": 3       # App Open reklamı kaç dakikada bir çıkabilir (Örn: 2)
+    }
+    return jsonify(config), 200
+
 # 7. TÜM VERİLERİ BİRLEŞTİREN ANA MOTOR (BEST PRACTICE)
 def get_all_configs_data():
     # Eski fonksiyonlarından verileri çekip paketliyoruz
@@ -670,13 +679,14 @@ def get_all_configs_data():
     mansetler_res, _ = get_mansetler_config()
     kesfet_res, _ = get_kesfet_config()
     takimlar_res, _ = get_takimlar_config()
-    
+    ads_res, _ = get_ads_config()
     return {
         "haber_kaynaklari": haberler_res.json,
         "piyasa": piyasa_res.json,
         "mansetler": mansetler_res.json.get("mansetler", []),
         "kesfet": kesfet_res.json,
-        "takimlar": takimlar_res.json.get("takimlar", [])
+        "takimlar": takimlar_res.json.get("takimlar", []),
+        "ads": ads_res.json
     }
 
 def generate_version(data):
@@ -689,6 +699,7 @@ def get_version():
     data = get_all_configs_data()
     version_hash = generate_version(data)
     return jsonify({"version": version_hash}), 200
+    
 
 # 9. GÜNCELLEME GEREKTİĞİNDE TÜM VERİYİ DÖNEN UÇ NOKTA
 @app.route('/config/all', methods=['GET'])
