@@ -1,266 +1,215 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
-from time import time
+import json
+import hashlib
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-# --- 1. TÜM HABER KAYNAKLARI (16 Adet - Tam Liste) ---
-@app.route('/haber-kaynaklari', methods=['GET'])
-def get_news_config():
-    # HATALI SÜSLÜ PARANTEZ DÜZELTİLDİ, KÖŞELİ PARANTEZ (LİSTE) YAPILDI
-    config = [
-      
-    {
-        "id": "fenerbahce",
-        "name": "Fenerbahçe",
-        "rss": "https://www.fotomac.com.tr/rss/fenerbahce.xml",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+# ==========================================
+# 1. VERİ KATMANI (DATA LAYER - BEST PRACTICE)
+# ==========================================
+
+def _get_news_sources():
+    return [
+        {
+            "id": "fenerbahce",
+            "name": "Fenerbahçe",
+            "rss": "https://www.fotomac.com.tr/rss/fenerbahce.xml",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "cnnturk",
+            "name": "CNN Türk",
+            "rss": "https://www.cnnturk.com/feed/rss/all/news",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<image>([\\s\\S]*?)<\\/image>",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "besiktas",
+            "name": "Beşiktaş",
+            "rss": "https://www.fotomac.com.tr/rss/besiktas.xml",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "galatasaray",
+            "name": "Galatasaray",
+            "rss": "https://www.fotomac.com.tr/rss/galatasaray.xml",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "trabzonspor",
+            "name": "Trabzonspor",
+            "rss": "https://www.fotomac.com.tr/rss/trabzonspor.xml",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "hurriyet",
+            "name": "Hürriyet",
+            "rss": "https://www.hurriyet.com.tr/rss/anasayfa",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "sozcu",
+            "name": "Sözcü",
+            "rss": "https://www.sozcu.com.tr/feeds-son-dakika",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<media:content[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "sabah",
+            "name": "Sabah",
+            "rss": "https://www.sabah.com.tr/rss/anasayfa.xml",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "milliyet",
+            "name": "Milliyet",
+            "rss": "https://www.milliyet.com.tr/rss/rssnew/sondakikarss.xml",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "url=[\"'](https?:\\/\\/.*?\\.(?:jpg|jpeg|png|webp|gif|bmp).*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "haberturk",
+            "name": "Habertürk",
+            "rss": "https://www.haberturk.com/rss/manset.xml",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "ensonhaber",
+            "name": "En Son Haber",
+            "rss": "https://www.ensonhaber.com/rss/ensonhaber.xml",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<media:content[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "mynet",
+            "name": "Mynet",
+            "rss": "https://www.mynet.com/haber/rss/sondakika",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<img640x360>(.*?)<\\/img640x360>",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "sondakika",
+            "name": "Son Dakika",
+            "rss": "https://rss.sondakika.com/rss_standart.asp",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<media:content[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "ntvspor",
+            "name": "NTV Spor",
+            "rss": "https://www.ntvspor.net/rss/anasayfa",
+            "rules": {
+                "item": "<entry[\\s\\S]*?>([\\s\\S]*?)<\\/entry>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<(?:atom:)?link[^>]+href=[\"'](.*?)[\"']",
+                "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
+                "date": "<published[^>]*>([\\s\\S]*?)<\\/published>"
+            }
+        },
+        {
+            "id": "fotomac",
+            "name": "Fotomaç",
+            "rss": "https://www.fotomac.com.tr/rss/son24saat.xml",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
+        },
+        {
+            "id": "ekonomim",
+            "name": "Ekonomim",
+            "rss": "https://www.ekonomim.com/rss",
+            "rules": {
+                "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
+                "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
+                "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
+                "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
+                "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            }
         }
-    },
-    {
-        "id": "cnnturk",
-        "name": "CNN Türk",
-        "rss": "https://www.cnnturk.com/feed/rss/all/news",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<image>([\\s\\S]*?)<\\/image>",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "besiktas",
-        "name": "Beşiktaş",
-        "rss": "https://www.fotomac.com.tr/rss/besiktas.xml",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']", # <-- FOTOMAÇ FORMATINA DÜZELTİLDİ
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "galatasaray",
-        "name": "Galatasaray",
-        "rss": "https://www.fotomac.com.tr/rss/galatasaray.xml",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']", # <-- FOTOMAÇ FORMATINA DÜZELTİLDİ
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "trabzonspor",
-        "name": "Trabzonspor",
-        "rss": "https://www.fotomac.com.tr/rss/trabzonspor.xml",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "hurriyet",
-        "name": "Hürriyet",
-        "rss": "https://www.hurriyet.com.tr/rss/anasayfa",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "sozcu",
-        "name": "Sözcü",
-        "rss": "https://www.sozcu.com.tr/feeds-son-dakika",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<media:content[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "sabah",
-        "name": "Sabah",
-        "rss": "https://www.sabah.com.tr/rss/anasayfa.xml",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "milliyet",
-        "name": "Milliyet",
-        "rss": "https://www.milliyet.com.tr/rss/rssnew/sondakikarss.xml",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "url=[\"'](https?:\\/\\/.*?\\.(?:jpg|jpeg|png|webp|gif|bmp).*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "haberturk",
-        "name": "Habertürk",
-        "rss": "https://www.haberturk.com/rss/manset.xml",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "ensonhaber",
-        "name": "En Son Haber",
-        "rss": "https://www.ensonhaber.com/rss/ensonhaber.xml",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<media:content[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "mynet",
-        "name": "Mynet",
-        "rss": "https://www.mynet.com/haber/rss/sondakika",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<img640x360>(.*?)<\\/img640x360>",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "sondakika",
-        "name": "Son Dakika",
-        "rss": "https://rss.sondakika.com/rss_standart.asp",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<media:content[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "ntvspor",
-        "name": "NTV Spor",
-        "rss": "https://www.ntvspor.net/rss/anasayfa",
-        "rules": {
-            "item": "<entry[\\s\\S]*?>([\\s\\S]*?)<\\/entry>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<(?:atom:)?link[^>]+href=[\"'](.*?)[\"']",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<published[^>]*>([\\s\\S]*?)<\\/published>"
-        }
-    },
-    {
-        "id": "fotomac",
-        "name": "Fotomaç",
-        "rss": "https://www.fotomac.com.tr/rss/son24saat.xml",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    },
-    {
-        "id": "ekonomim",
-        "name": "Ekonomim",
-        "rss": "https://www.ekonomim.com/rss",
-        "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
-        }
-    }
     ]
-    return jsonify(config)
 
-def format_tr(value):
-    return f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-# --- 2. ANA PİYASA VERİSİ VE HAVA DURUMU ---
-@app.route('/piyasa-verileri', methods=['GET'])
-def get_market_data():
-    lat = request.args.get("lat", "41.0138")
-    lon = request.args.get("lon", "28.9497")
-    
-    result = {
-        "USD": "-", "EUR": "-", "ALTIN": "-", "CEYREK": "-",
-        "WEATHER": "-", "W_DESC": "İSTANBUL"
-    }
-
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        t_res = requests.get("https://finans.truncgil.com/today.json", headers=headers, timeout=8)
-        if t_res.status_code == 200:
-            data = t_res.json()
-            def parse_val(key):
-                try:
-                    # JSON'undaki "7.435,91" formatını temizler
-                    raw = data.get(key, {}).get("Satış", "0")
-                    clean = str(raw).replace(".", "").replace(",", ".")
-                    return float(clean)
-                except: return 0.0
-
-            usd = parse_val("USD")
-            eur = parse_val("EUR")
-            gold = parse_val("gram-altin")
-            ceyrek = parse_val("ceyrek-altin")
-
-            if usd > 0: result["USD"] = f"{usd:.2f}"
-            if eur > 0: result["EUR"] = f"{eur:.2f}"
-            if gold > 0: result["ALTIN"] = format_tr(gold)
-            if ceyrek > 0: result["CEYREK"] = format_tr(ceyrek)
-            
-            print(f"✅ VERİLER GELDİ -> USD: {result['USD']} | GRAM: {result['ALTIN']} | ÇEYREK: {result['CEYREK']}")
-    except Exception as e:
-        print(f"❌ PİYASA HATASI: {e}")
-
-    try:
-        w_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
-        w_res = requests.get(w_url, timeout=5)
-        temp = w_res.json().get("current_weather", {}).get("temperature")
-        if temp: result["WEATHER"] = f"{temp}°C"
-    except: pass
-
-    return jsonify(result), 200
-
-# --- 3. PİYASA VE HAVA DURUMU KONFİGÜRASYONU (REMOTE CONFIG) ---
-@app.route('/config/piyasa', methods=['GET'])
-def get_piyasa_config():
-    config = {
+def _get_piyasa_config():
+    return {
         "market_api": "https://finans.truncgil.com/today.json",
         "market_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -273,13 +222,10 @@ def get_piyasa_config():
         },
         "weather_api_base": "https://api.open-meteo.com/v1/forecast"
     }
-    return jsonify(config), 200
 
-# --- 4. MANŞETLER KONFİGÜRASYONU ---
-@app.route('/config/mansetler', methods=['GET'])
-def get_mansetler_config():
+def _get_mansetler_config():
     base = "https://i13.haber7.net/haber7/gazete"
-    config = [
+    return [
         {"id": "manset_hurriyet", "name": "Hürriyet", "pattern": f"{base}/hurriyet"},
         {"id": "manset_sabah", "name": "Sabah", "pattern": f"{base}/sabah"},
         {"id": "manset_milliyet", "name": "Milliyet", "pattern": f"{base}/milliyet"},
@@ -299,14 +245,11 @@ def get_mansetler_config():
         {"id": "manset_dogru-haber", "name": "Doğru Haber", "pattern": f"{base}/dogru-haber"},
         {"id": "manset_takvim", "name": "Takvim", "pattern": f"{base}/takvim-gazetesi"},
         {"id": "manset_fanatik", "name": "Fanatik", "pattern": f"{base}/fanatik"},
-        {"id": "manset_fotomac", "name": "Fotomaç", "pattern": f"{base}/fotomac"},
+        {"id": "manset_fotomac", "name": "Fotomaç", "pattern": f"{base}/fotomac"}
     ]
-    return jsonify({"mansetler": config}), 200
 
-# --- 5. KEŞFET KONFİGÜRASYONU ---
-@app.route('/config/kesfet', methods=['GET'])
-def get_kesfet_config():
-    config = {
+def _get_kesfet_config():
+    return {
         "ulusal": [
             {"id": "hurriyet", "name": "Hürriyet", "link": "https://www.hurriyet.com.tr"},
             {"id": "sabah", "name": "Sabah", "link": "https://m.sabah.com.tr"},
@@ -613,101 +556,163 @@ def get_kesfet_config():
             {"id": "zonguldak_h", "name": "Zonguldak", "link": "https://www.haberler.com/zonguldak/"}
         ]
     }
-    return jsonify(config), 200
 
-# --- 6. TARAFTAR TAKIMLARI KONFİGÜRASYONU ---
-@app.route('/config/takimlar', methods=['GET'])
-def get_takimlar_config():
-    config = {
-        "takimlar": [
-            {"id": "besiktas", "name": "Beşiktaş", "slug": "besiktas", "link": "https://www.fanatik.com.tr/takim/besiktas/futbol/", "lig": 1},
-            {"id": "fenerbahce", "name": "Fenerbahçe", "slug": "fenerbahce", "link": "https://www.fanatik.com.tr/takim/fenerbahce/futbol/", "lig": 1},
-            {"id": "galatasaray", "name": "Galatasaray", "slug": "galatasaray", "link": "https://www.fanatik.com.tr/takim/galatasaray/futbol/", "lig": 1},
-            {"id": "trabzonspor", "name": "Trabzonspor", "slug": "trabzonspor", "link": "https://www.fanatik.com.tr/takim/trabzonspor/futbol/", "lig": 1},
-            {"id": "adana_demirspor", "name": "Adana Demirspor", "slug": "adana-demirspor", "link": "https://www.fanatik.com.tr/takim/adana-demirspor/futbol/", "lig": 2},
-            {"id": "alanyaspor", "name": "Alanyaspor", "slug": "alanyaspor", "link": "https://www.fanatik.com.tr/takim/alanyaspor/futbol/", "lig": 1},
-            {"id": "amed", "name": "Amed SFK", "slug": "amed-sportif-faaliyetler", "link": "https://www.fanatik.com.tr/takim/amed-sportif-faaliyetler/futbol/", "lig": 2},
-            {"id": "antalyaspor", "name": "Antalyaspor", "slug": "antalyaspor", "link": "https://www.fanatik.com.tr/takim/antalyaspor/futbol/", "lig": 1},
-            {"id": "bandirmaspor", "name": "Bandırmaspor", "slug": "bandirmaspor", "link": "https://www.fanatik.com.tr/takim/bandirmaspor/futbol/", "lig": 2},
-            {"id": "basaksehir", "name": "Başakşehir", "slug": "basaksehir", "link": "https://www.fanatik.com.tr/takim/basaksehir/futbol/", "lig": 1},
-            {"id": "bodrumspor", "name": "Bodrumspor", "slug": "bodrumspor", "link": "https://www.fanatik.com.tr/takim/bodrumspor/futbol/", "lig": 2},
-            {"id": "boluspor", "name": "Boluspor", "slug": "boluspor", "link": "https://www.fanatik.com.tr/takim/boluspor/futbol/", "lig": 2},
-            {"id": "corum_fk", "name": "Çorum FK", "slug": "corum-belediyespor", "link": "https://www.fanatik.com.tr/takim/corum-belediyespor/futbol/", "lig": 2},
-            {"id": "erokspor", "name": "Erokspor", "slug": "esenler-erokspor", "link": "https://www.fanatik.com.tr/takim/esenler-erokspor/futbol/", "lig": 2},
-            {"id": "erzurumspor", "name": "Erzurumspor", "slug": "bsb-erzurumspor", "link": "https://www.fanatik.com.tr/takim/bsb-erzurumspor/futbol/", "lig": 2},
-            {"id": "eyupspor", "name": "Eyüpspor", "slug": "eyupspor", "link": "https://www.fanatik.com.tr/takim/eyupspor/futbol/", "lig": 1},
-            {"id": "gaziantep_fk", "name": "Gaziantep FK", "slug": "gaziantep-fk", "link": "https://www.fanatik.com.tr/takim/gaziantep-fk/futbol/", "lig": 1},
-            {"id": "genclerbirligi", "name": "Gençlerbirliği", "slug": "genclerbirligi", "link": "https://www.fanatik.com.tr/takim/genclerbirligi/futbol/", "lig": 1},
-            {"id": "goztepe", "name": "Göztepe", "slug": "goztepe", "link": "https://www.fanatik.com.tr/takim/goztepe/futbol/", "lig": 1},
-            {"id": "hatayspor", "name": "Hatayspor", "slug": "hatayspor", "link": "https://www.fanatik.com.tr/takim/hatayspor/futbol/", "lig": 2},
-            {"id": "igdir_fk", "name": "Iğdır FK", "slug": "igdir-fk", "link": "https://www.fanatik.com.tr/takim/igdir-fk/futbol/", "lig": 2},
-            {"id": "istanbulspor", "name": "İstanbulspor", "slug": "istanbulspor", "link": "https://www.fanatik.com.tr/takim/istanbulspor/futbol/", "lig": 2},
-            {"id": "karagumruk", "name": "Karagümrük", "slug": "fatih-karagumruk", "link": "https://www.fanatik.com.tr/takim/fatih-karagumruk/futbol/", "lig": 1},
-            {"id": "kasimpasa", "name": "Kasımpaşa", "slug": "kasimpasa", "link": "https://www.fanatik.com.tr/takim/kasimpasa/futbol/", "lig": 1},
-            {"id": "kayserispor", "name": "Kayserispor", "slug": "kayserispor", "link": "https://www.fanatik.com.tr/takim/kayserispor/futbol/", "lig": 1},
-            {"id": "keciorengucu", "name": "Keçiörengücü", "slug": "ankara-keciorengucu", "link": "https://www.fanatik.com.tr/takim/ankara-keciorengucu/futbol/", "lig": 2},
-            {"id": "kocaelispor", "name": "Kocaelispor", "slug": "kocaelispor", "link": "https://www.fanatik.com.tr/takim/kocaelispor/futbol/", "lig": 1},
-            {"id": "konyaspor", "name": "Konyaspor", "slug": "konyaspor", "link": "https://www.fanatik.com.tr/takim/konyaspor/futbol/", "lig": 1},
-            {"id": "manisa_fk", "name": "Manisa FK", "slug": "manisa-fk", "link": "https://www.fanatik.com.tr/takim/manisa-fk/futbol/", "lig": 2},
-            {"id": "pendikspor", "name": "Pendikspor", "slug": "pendikspor", "link": "https://www.fanatik.com.tr/takim/pendikspor/futbol/", "lig": 2},
-            {"id": "rizespor", "name": "Rizespor", "slug": "caykur-rizespor", "link": "https://www.fanatik.com.tr/takim/caykur-rizespor/futbol/", "lig": 1},
-            {"id": "sakaryaspor", "name": "Sakaryaspor", "slug": "sakaryaspor", "link": "https://www.fanatik.com.tr/takim/sakaryaspor/futbol/", "lig": 2},
-            {"id": "samsunspor", "name": "Samsunspor", "slug": "samsunspor", "link": "https://www.fanatik.com.tr/takim/samsunspor/futbol/", "lig": 1},
-            {"id": "sariyer", "name": "Sarıyer", "slug": "sariyer", "link": "https://www.fanatik.com.tr/takim/sariyer/futbol/", "lig": 2},
-            {"id": "serikspor", "name": "Serikspor", "slug": "serik-belediyespor", "link": "https://www.fanatik.com.tr/takim/serik-belediyespor/futbol/", "lig": 2},
-            {"id": "sivasspor", "name": "Sivasspor", "slug": "sivasspor", "link": "https://www.fanatik.com.tr/takim/sivasspor/futbol/", "lig": 2},
-            {"id": "umraniyespor", "name": "Ümraniyespor", "slug": "umraniyespor", "link": "https://www.fanatik.com.tr/takim/umraniyespor/futbol/", "lig": 2},
-            {"id": "vanspor", "name": "Vanspor", "slug": "vanspor", "link": "https://www.fanatik.com.tr/takim/vanspor/futbol/", "lig": 2}
-        ]
-    }
-    return jsonify(config), 200
+def _get_takimlar_config():
+    return [
+        {"id": "besiktas", "name": "Beşiktaş", "slug": "besiktas", "link": "https://www.fanatik.com.tr/takim/besiktas/futbol/", "lig": 1},
+        {"id": "fenerbahce", "name": "Fenerbahçe", "slug": "fenerbahce", "link": "https://www.fanatik.com.tr/takim/fenerbahce/futbol/", "lig": 1},
+        {"id": "galatasaray", "name": "Galatasaray", "slug": "galatasaray", "link": "https://www.fanatik.com.tr/takim/galatasaray/futbol/", "lig": 1},
+        {"id": "trabzonspor", "name": "Trabzonspor", "slug": "trabzonspor", "link": "https://www.fanatik.com.tr/takim/trabzonspor/futbol/", "lig": 1},
+        {"id": "adana_demirspor", "name": "Adana Demirspor", "slug": "adana-demirspor", "link": "https://www.fanatik.com.tr/takim/adana-demirspor/futbol/", "lig": 2},
+        {"id": "alanyaspor", "name": "Alanyaspor", "slug": "alanyaspor", "link": "https://www.fanatik.com.tr/takim/alanyaspor/futbol/", "lig": 1},
+        {"id": "amed", "name": "Amed SFK", "slug": "amed-sportif-faaliyetler", "link": "https://www.fanatik.com.tr/takim/amed-sportif-faaliyetler/futbol/", "lig": 2},
+        {"id": "antalyaspor", "name": "Antalyaspor", "slug": "antalyaspor", "link": "https://www.fanatik.com.tr/takim/antalyaspor/futbol/", "lig": 1},
+        {"id": "bandirmaspor", "name": "Bandırmaspor", "slug": "bandirmaspor", "link": "https://www.fanatik.com.tr/takim/bandirmaspor/futbol/", "lig": 2},
+        {"id": "basaksehir", "name": "Başakşehir", "slug": "basaksehir", "link": "https://www.fanatik.com.tr/takim/basaksehir/futbol/", "lig": 1},
+        {"id": "bodrumspor", "name": "Bodrumspor", "slug": "bodrumspor", "link": "https://www.fanatik.com.tr/takim/bodrumspor/futbol/", "lig": 2},
+        {"id": "boluspor", "name": "Boluspor", "slug": "boluspor", "link": "https://www.fanatik.com.tr/takim/boluspor/futbol/", "lig": 2},
+        {"id": "corum_fk", "name": "Çorum FK", "slug": "corum-belediyespor", "link": "https://www.fanatik.com.tr/takim/corum-belediyespor/futbol/", "lig": 2},
+        {"id": "erokspor", "name": "Erokspor", "slug": "esenler-erokspor", "link": "https://www.fanatik.com.tr/takim/esenler-erokspor/futbol/", "lig": 2},
+        {"id": "erzurumspor", "name": "Erzurumspor", "slug": "bsb-erzurumspor", "link": "https://www.fanatik.com.tr/takim/bsb-erzurumspor/futbol/", "lig": 2},
+        {"id": "eyupspor", "name": "Eyüpspor", "slug": "eyupspor", "link": "https://www.fanatik.com.tr/takim/eyupspor/futbol/", "lig": 1},
+        {"id": "gaziantep_fk", "name": "Gaziantep FK", "slug": "gaziantep-fk", "link": "https://www.fanatik.com.tr/takim/gaziantep-fk/futbol/", "lig": 1},
+        {"id": "genclerbirligi", "name": "Gençlerbirliği", "slug": "genclerbirligi", "link": "https://www.fanatik.com.tr/takim/genclerbirligi/futbol/", "lig": 1},
+        {"id": "goztepe", "name": "Göztepe", "slug": "goztepe", "link": "https://www.fanatik.com.tr/takim/goztepe/futbol/", "lig": 1},
+        {"id": "hatayspor", "name": "Hatayspor", "slug": "hatayspor", "link": "https://www.fanatik.com.tr/takim/hatayspor/futbol/", "lig": 2},
+        {"id": "igdir_fk", "name": "Iğdır FK", "slug": "igdir-fk", "link": "https://www.fanatik.com.tr/takim/igdir-fk/futbol/", "lig": 2},
+        {"id": "istanbulspor", "name": "İstanbulspor", "slug": "istanbulspor", "link": "https://www.fanatik.com.tr/takim/istanbulspor/futbol/", "lig": 2},
+        {"id": "karagumruk", "name": "Karagümrük", "slug": "fatih-karagumruk", "link": "https://www.fanatik.com.tr/takim/fatih-karagumruk/futbol/", "lig": 1},
+        {"id": "kasimpasa", "name": "Kasımpaşa", "slug": "kasimpasa", "link": "https://www.fanatik.com.tr/takim/kasimpasa/futbol/", "lig": 1},
+        {"id": "kayserispor", "name": "Kayserispor", "slug": "kayserispor", "link": "https://www.fanatik.com.tr/takim/kayserispor/futbol/", "lig": 1},
+        {"id": "keciorengucu", "name": "Keçiörengücü", "slug": "ankara-keciorengucu", "link": "https://www.fanatik.com.tr/takim/ankara-keciorengucu/futbol/", "lig": 2},
+        {"id": "kocaelispor", "name": "Kocaelispor", "slug": "kocaelispor", "link": "https://www.fanatik.com.tr/takim/kocaelispor/futbol/", "lig": 1},
+        {"id": "konyaspor", "name": "Konyaspor", "slug": "konyaspor", "link": "https://www.fanatik.com.tr/takim/konyaspor/futbol/", "lig": 1},
+        {"id": "manisa_fk", "name": "Manisa FK", "slug": "manisa-fk", "link": "https://www.fanatik.com.tr/takim/manisa-fk/futbol/", "lig": 2},
+        {"id": "pendikspor", "name": "Pendikspor", "slug": "pendikspor", "link": "https://www.fanatik.com.tr/takim/pendikspor/futbol/", "lig": 2},
+        {"id": "rizespor", "name": "Rizespor", "slug": "caykur-rizespor", "link": "https://www.fanatik.com.tr/takim/caykur-rizespor/futbol/", "lig": 1},
+        {"id": "sakaryaspor", "name": "Sakaryaspor", "slug": "sakaryaspor", "link": "https://www.fanatik.com.tr/takim/sakaryaspor/futbol/", "lig": 2},
+        {"id": "samsunspor", "name": "Samsunspor", "slug": "samsunspor", "link": "https://www.fanatik.com.tr/takim/samsunspor/futbol/", "lig": 1},
+        {"id": "sariyer", "name": "Sarıyer", "slug": "sariyer", "link": "https://www.fanatik.com.tr/takim/sariyer/futbol/", "lig": 2},
+        {"id": "serikspor", "name": "Serikspor", "slug": "serik-belediyespor", "link": "https://www.fanatik.com.tr/takim/serik-belediyespor/futbol/", "lig": 2},
+        {"id": "sivasspor", "name": "Sivasspor", "slug": "sivasspor", "link": "https://www.fanatik.com.tr/takim/sivasspor/futbol/", "lig": 2},
+        {"id": "umraniyespor", "name": "Ümraniyespor", "slug": "umraniyespor", "link": "https://www.fanatik.com.tr/takim/umraniyespor/futbol/", "lig": 2},
+        {"id": "vanspor", "name": "Vanspor", "slug": "vanspor", "link": "https://www.fanatik.com.tr/takim/vanspor/futbol/", "lig": 2}
+    ]
 
-# --- 6.5 REKLAM (ADS) KONFİGÜRASYONU ---
-@app.route('/config/ads', methods=['GET'])
-def get_ads_config():
-    config = {
-        "ad_frequency": 15,          # Kaç haber okunduğunda geçiş reklamı çıkacak (Örn: 12)
-        "app_open_cooldown": 3       # App Open reklamı kaç dakikada bir çıkabilir (Örn: 2)
-    }
-    return jsonify(config), 200
-
-# 7. TÜM VERİLERİ BİRLEŞTİREN ANA MOTOR (BEST PRACTICE)
-def get_all_configs_data():
-    # Eski fonksiyonlarından verileri çekip paketliyoruz
-    haberler_res = get_news_config()
-    piyasa_res, _ = get_piyasa_config()
-    mansetler_res, _ = get_mansetler_config()
-    kesfet_res, _ = get_kesfet_config()
-    takimlar_res, _ = get_takimlar_config()
-    ads_res, _ = get_ads_config()
+def _get_ads_config():
     return {
-        "haber_kaynaklari": haberler_res.json,
-        "piyasa": piyasa_res.json,
-        "mansetler": mansetler_res.json.get("mansetler", []),
-        "kesfet": kesfet_res.json,
-        "takimlar": takimlar_res.json.get("takimlar", []),
-        "ads": ads_res.json
+        "ad_frequency": 15,
+        "app_open_cooldown": 3
     }
+
+# ==========================================
+# 2. YARDIMCI FONKSİYONLAR
+# ==========================================
+
+def format_tr(value):
+    return f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def generate_version(data):
     config_str = json.dumps(data, sort_keys=True)
     return hashlib.md5(config_str.encode()).hexdigest()
 
-# 8. CİHAZLARIN VERSİYON KONTROL UÇ NOKTASI
+def get_all_configs_data():
+    return {
+        "haber_kaynaklari": _get_news_sources(),
+        "piyasa": _get_piyasa_config(),
+        "mansetler": _get_mansetler_config(),
+        "kesfet": _get_kesfet_config(),
+        "takimlar": _get_takimlar_config(),
+        "ads": _get_ads_config()
+    }
+
+# ==========================================
+# 3. HTTP YÖNLENDİRMELERİ (ROUTE LAYER)
+# ==========================================
+
+@app.route('/haber-kaynaklari', methods=['GET'])
+def get_news_config():
+    return jsonify(_get_news_sources()), 200
+
+@app.route('/piyasa-verileri', methods=['GET'])
+def get_market_data():
+    lat = request.args.get("lat", "41.0138")
+    lon = request.args.get("lon", "28.9497")
+    
+    result = {
+        "USD": "-", "EUR": "-", "ALTIN": "-", "CEYREK": "-",
+        "WEATHER": "-", "W_DESC": "İSTANBUL"
+    }
+
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        t_res = requests.get("https://finans.truncgil.com/today.json", headers=headers, timeout=8)
+        if t_res.status_code == 200:
+            data = t_res.json()
+            def parse_val(key):
+                try:
+                    raw = data.get(key, {}).get("Satış", "0")
+                    clean = str(raw).replace(".", "").replace(",", ".")
+                    return float(clean)
+                except: return 0.0
+
+            usd = parse_val("USD")
+            eur = parse_val("EUR")
+            gold = parse_val("gram-altin")
+            ceyrek = parse_val("ceyrek-altin")
+
+            if usd > 0: result["USD"] = f"{usd:.2f}"
+            if eur > 0: result["EUR"] = f"{eur:.2f}"
+            if gold > 0: result["ALTIN"] = format_tr(gold)
+            if ceyrek > 0: result["CEYREK"] = format_tr(ceyrek)
+            
+    except Exception as e:
+        print(f"❌ PİYASA HATASI: {e}")
+
+    try:
+        w_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
+        w_res = requests.get(w_url, timeout=5)
+        temp = w_res.json().get("current_weather", {}).get("temperature")
+        if temp: result["WEATHER"] = f"{temp}°C"
+    except Exception as e:
+        print(f"❌ HAVA DURUMU HATASI: {e}")
+
+    return jsonify(result), 200
+
+@app.route('/config/piyasa', methods=['GET'])
+def get_piyasa_config_route():
+    return jsonify(_get_piyasa_config()), 200
+
+@app.route('/config/mansetler', methods=['GET'])
+def get_mansetler_config_route():
+    return jsonify({"mansetler": _get_mansetler_config()}), 200
+
+@app.route('/config/kesfet', methods=['GET'])
+def get_kesfet_config_route():
+    return jsonify(_get_kesfet_config()), 200
+
+@app.route('/config/takimlar', methods=['GET'])
+def get_takimlar_config_route():
+    return jsonify({"takimlar": _get_takimlar_config()}), 200
+
+@app.route('/config/ads', methods=['GET'])
+def get_ads_config_route():
+    return jsonify(_get_ads_config()), 200
+
 @app.route('/config/version', methods=['GET'])
 def get_version():
     data = get_all_configs_data()
     version_hash = generate_version(data)
     return jsonify({"version": version_hash}), 200
     
-
-# 9. GÜNCELLEME GEREKTİĞİNDE TÜM VERİYİ DÖNEN UÇ NOKTA
 @app.route('/config/all', methods=['GET'])
 def get_all_configs():
     data = get_all_configs_data()
     data["version"] = generate_version(data)
     return jsonify(data), 200
 
+# ==========================================
+# 4. SUNUCU BAŞLATMA
+# ==========================================
 if __name__ == '__main__':
-    import os
     app.run(host='0.0.0.0', port=5000)
