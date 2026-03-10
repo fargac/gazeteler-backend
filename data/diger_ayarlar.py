@@ -1,13 +1,17 @@
+# Ortak Sabitler (SonarQube S1192 Çözümü)
+KEY_SATIS = "Satış"
+FORMAT_TR_CURRENCY = "tr_currency"
+
 PIYASA_CONFIG = {
     "market_api": "https://finans.truncgil.com/today.json",
     "market_headers": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     },
     "market_rules": {
-        "usd": {"key": "USD", "subKey": "Satış", "format": "tr_currency"},
-        "eur": {"key": "EUR", "subKey": "Satış", "format": "tr_currency"},
-        "gold": {"key": "gram-altin", "subKey": "Satış", "format": "tr_currency"},
-        "ceyrek": {"key": "ceyrek-altin", "subKey": "Satış", "format": "tr_currency"}
+        "usd": {"key": "USD", "subKey": KEY_SATIS, "format": FORMAT_TR_CURRENCY},
+        "eur": {"key": "EUR", "subKey": KEY_SATIS, "format": FORMAT_TR_CURRENCY},
+        "gold": {"key": "gram-altin", "subKey": KEY_SATIS, "format": FORMAT_TR_CURRENCY},
+        "ceyrek": {"key": "ceyrek-altin", "subKey": KEY_SATIS, "format": FORMAT_TR_CURRENCY}
     },
     "weather_api_base": "https://api.open-meteo.com/v1/forecast"
 }

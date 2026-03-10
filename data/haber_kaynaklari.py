@@ -1,14 +1,23 @@
+# Ortak Regex Kuralları (SonarQube S1192 Best Practice Çözümü)
+RULE_ITEM_STD = "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>"
+RULE_TITLE_STD = "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>"
+RULE_LINK_STD = "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>"
+RULE_DATE_STD = "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+
+RULE_IMAGE_ENCLOSURE = "<enclosure[^>]+url=[\"'](.*?)[\"']"
+RULE_IMAGE_MEDIA = "<media:content[^>]+url=[\"'](.*?)[\"']"
+
 NEWS_SOURCES = [
     {
         "id": "fenerbahce",
         "name": "Fenerbahçe",
         "rss": "https://www.fotomac.com.tr/rss/fenerbahce.xml",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_ENCLOSURE,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -16,11 +25,11 @@ NEWS_SOURCES = [
         "name": "CNN Türk",
         "rss": "https://www.cnnturk.com/feed/rss/all/news",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<image>([\\s\\S]*?)<\\/image>",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": "<image>([\\s\\S]*?)<\\/image>", # Sadece CNN Türk'e özel
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -28,11 +37,11 @@ NEWS_SOURCES = [
         "name": "Beşiktaş",
         "rss": "https://www.fotomac.com.tr/rss/besiktas.xml",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_ENCLOSURE,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -40,11 +49,11 @@ NEWS_SOURCES = [
         "name": "Galatasaray",
         "rss": "https://www.fotomac.com.tr/rss/galatasaray.xml",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_ENCLOSURE,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -52,11 +61,11 @@ NEWS_SOURCES = [
         "name": "Trabzonspor",
         "rss": "https://www.fotomac.com.tr/rss/trabzonspor.xml",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_ENCLOSURE,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -64,11 +73,11 @@ NEWS_SOURCES = [
         "name": "Hürriyet",
         "rss": "https://www.hurriyet.com.tr/rss/anasayfa",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_ENCLOSURE,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -76,11 +85,11 @@ NEWS_SOURCES = [
         "name": "Sözcü",
         "rss": "https://www.sozcu.com.tr/feeds-son-dakika",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<media:content[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_MEDIA,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -88,11 +97,11 @@ NEWS_SOURCES = [
         "name": "Sabah",
         "rss": "https://www.sabah.com.tr/rss/anasayfa.xml",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_ENCLOSURE,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -100,11 +109,11 @@ NEWS_SOURCES = [
         "name": "Milliyet",
         "rss": "https://www.milliyet.com.tr/rss/rssnew/sondakikarss.xml",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "url=[\"'](https?:\\/\\/.*?\\.(?:jpg|jpeg|png|webp|gif|bmp).*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": "url=[\"'](https?:\\/\\/.*?\\.(?:jpg|jpeg|png|webp|gif|bmp).*?)[\"']", # Sadece Milliyet'e özel
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -112,11 +121,11 @@ NEWS_SOURCES = [
         "name": "Habertürk",
         "rss": "https://www.haberturk.com/rss/manset.xml",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_ENCLOSURE,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -124,11 +133,11 @@ NEWS_SOURCES = [
         "name": "En Son Haber",
         "rss": "https://www.ensonhaber.com/rss/ensonhaber.xml",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<media:content[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_MEDIA,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -136,11 +145,11 @@ NEWS_SOURCES = [
         "name": "Mynet",
         "rss": "https://www.mynet.com/haber/rss/sondakika",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<img640x360>(.*?)<\\/img640x360>",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": "<img640x360>(.*?)<\\/img640x360>", # Sadece Mynet'e özel
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -148,11 +157,11 @@ NEWS_SOURCES = [
         "name": "Son Dakika",
         "rss": "https://rss.sondakika.com/rss_standart.asp",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<media:content[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_MEDIA,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -160,11 +169,11 @@ NEWS_SOURCES = [
         "name": "NTV Spor",
         "rss": "https://www.ntvspor.net/rss/anasayfa",
         "rules": {
-            "item": "<entry[\\s\\S]*?>([\\s\\S]*?)<\\/entry>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<(?:atom:)?link[^>]+href=[\"'](.*?)[\"']",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<published[^>]*>([\\s\\S]*?)<\\/published>"
+            "item": "<entry[\\s\\S]*?>([\\s\\S]*?)<\\/entry>", # Sadece NTV Spor'a özel
+            "title": RULE_TITLE_STD,
+            "link": "<(?:atom:)?link[^>]+href=[\"'](.*?)[\"']", # Sadece NTV Spor'a özel
+            "image": RULE_IMAGE_ENCLOSURE,
+            "date": "<published[^>]*>([\\s\\S]*?)<\\/published>" # Sadece NTV Spor'a özel
         }
     },
     {
@@ -172,11 +181,11 @@ NEWS_SOURCES = [
         "name": "Fotomaç",
         "rss": "https://www.fotomac.com.tr/rss/son24saat.xml",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_ENCLOSURE,
+            "date": RULE_DATE_STD
         }
     },
     {
@@ -184,11 +193,11 @@ NEWS_SOURCES = [
         "name": "Ekonomim",
         "rss": "https://www.ekonomim.com/rss",
         "rules": {
-            "item": "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>",
-            "title": "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>",
-            "link": "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>",
-            "image": "<enclosure[^>]+url=[\"'](.*?)[\"']",
-            "date": "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+            "item": RULE_ITEM_STD,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_ENCLOSURE,
+            "date": RULE_DATE_STD
         }
     }
 ]
