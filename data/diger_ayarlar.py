@@ -13,7 +13,7 @@ PIYASA_CONFIG = {
 }
 
 ADS_CONFIG = {
-    "ad_frequency": 16,
+    "ad_frequency": 17,
     "app_open_cooldown": 3
 }
 
