@@ -115,8 +115,7 @@ KESFET_CONFIG = {
         {"id": "soner_yalcin", "name": "Soner Yalçın", "link": "https://www.sozcu.com.tr/kategori/soner-yalcin-a31"},
         {"id": "ismail_saymaz", "name": "İsmail Saymaz", "link": "https://www.sozcu.com.tr/ismail-saymaz-a36"},
         {"id": "ahmet_cakar", "name": "Ahmet Çakar", "link": "https://m.sabah.com.tr/yazarlar/cakar/arsiv?getall=true"},
-        {"id": "erman_toroglu", "name": "Erman Toroğlu", "link": "https://www.sozcu.com.tr/erman-toroglu-a2294"},
-        {"id": "sansal_buyuka", "name": "Şansal Büyüka", "link": "https://www.milliyet.com.tr/yazarlar/sansal-buyuka/"}
+        {"id": "erman_toroglu", "name": "Erman Toroğlu", "link": "https://www.sozcu.com.tr/erman-toroglu-a2294"}
     ],
     "gazete_yazarlari": [
         {"id": "hurriyet", "name": "Hürriyet Yazarlar", "link": "https://m.hurriyet.com.tr/yazarlar/"},

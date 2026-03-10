@@ -1,11 +1,11 @@
-# Ortak Regex Kuralları (SonarQube S1192 Best Practice Çözümü)
-RULE_ITEM_STD = "<item[\\s\\S]*?>([\\s\\S]*?)<\\/item>"
-RULE_TITLE_STD = "<title[\\s\\S]*?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/title>"
-RULE_LINK_STD = "<link>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/link>"
-RULE_DATE_STD = "<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>"
+# Ortak Regex Kuralları (SonarQube S1192 Best Practice Çözümü - Raw Strings)
+RULE_ITEM_STD = r"<item[\s\S]*?>([\s\S]*?)<\/item>"
+RULE_TITLE_STD = r"<title[\s\S]*?>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>"
+RULE_LINK_STD = r"<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>"
+RULE_DATE_STD = r"<pubDate[^>]*>([\s\S]*?)<\/pubDate>"
 
-RULE_IMAGE_ENCLOSURE = "<enclosure[^>]+url=[\"'](.*?)[\"']"
-RULE_IMAGE_MEDIA = "<media:content[^>]+url=[\"'](.*?)[\"']"
+RULE_IMAGE_ENCLOSURE = r"<enclosure[^>]+url=[\"'](.*?)[\"']"
+RULE_IMAGE_MEDIA = r"<media:content[^>]+url=[\"'](.*?)[\"']"
 
 NEWS_SOURCES = [
     {
@@ -28,7 +28,7 @@ NEWS_SOURCES = [
             "item": RULE_ITEM_STD,
             "title": RULE_TITLE_STD,
             "link": RULE_LINK_STD,
-            "image": "<image>([\\s\\S]*?)<\\/image>", # Sadece CNN Türk'e özel
+            "image": r"<image>([\s\S]*?)<\/image>", # Sadece CNN Türk'e özel
             "date": RULE_DATE_STD
         }
     },
@@ -112,7 +112,7 @@ NEWS_SOURCES = [
             "item": RULE_ITEM_STD,
             "title": RULE_TITLE_STD,
             "link": RULE_LINK_STD,
-            "image": "url=[\"'](https?:\\/\\/.*?\\.(?:jpg|jpeg|png|webp|gif|bmp).*?)[\"']", # Sadece Milliyet'e özel
+            "image": r"url=[\"'](https?:\/\/.*?\.(?:jpg|jpeg|png|webp|gif|bmp).*?)[\"']", # Sadece Milliyet'e özel
             "date": RULE_DATE_STD
         }
     },
@@ -148,7 +148,7 @@ NEWS_SOURCES = [
             "item": RULE_ITEM_STD,
             "title": RULE_TITLE_STD,
             "link": RULE_LINK_STD,
-            "image": "<img640x360>(.*?)<\\/img640x360>", # Sadece Mynet'e özel
+            "image": r"<img640x360>(.*?)<\/img640x360>", # Sadece Mynet'e özel
             "date": RULE_DATE_STD
         }
     },
@@ -169,11 +169,11 @@ NEWS_SOURCES = [
         "name": "NTV Spor",
         "rss": "https://www.ntvspor.net/rss/anasayfa",
         "rules": {
-            "item": "<entry[\\s\\S]*?>([\\s\\S]*?)<\\/entry>", # Sadece NTV Spor'a özel
+            "item": r"<entry[\s\S]*?>([\s\S]*?)<\/entry>", # Sadece NTV Spor'a özel
             "title": RULE_TITLE_STD,
-            "link": "<(?:atom:)?link[^>]+href=[\"'](.*?)[\"']", # Sadece NTV Spor'a özel
+            "link": r"<(?:atom:)?link[^>]+href=[\"'](.*?)[\"']", # Sadece NTV Spor'a özel
             "image": RULE_IMAGE_ENCLOSURE,
-            "date": "<published[^>]*>([\\s\\S]*?)<\\/published>" # Sadece NTV Spor'a özel
+            "date": r"<published[^>]*>([\s\S]*?)<\/published>" # Sadece NTV Spor'a özel
         }
     },
     {
