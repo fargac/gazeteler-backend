@@ -98,7 +98,7 @@ NEWS_SOURCES = [
         "name": "Hürriyet",
         "rss": "https://www.hurriyet.com.tr/rss/anasayfa",
         "maxItems": 51,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial","Lezizz","Kelebek","Spor Arena","Dünya","Aile"],
+        "excludeCategories": ["Resmi İlanlar", "Advertorial","Lezizz","Kelebek","Spor Arena","Aile"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -171,9 +171,9 @@ NEWS_SOURCES = [
     {
         "id": "ensonhaber",
         "name": "En Son Haber",
-        "rss": "https://www.ensonhaber.com/rss/ensonhaber.xml",
+        "rss": "https://www.ensonhaber.com/rss/gundem.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial","3. Sayfa","Magazin","Otomobil","Yaşam","Futbol"],
+        "excludeCategories": ["Resmi İlanlar", "Advertorial","3. Sayfa","Magazin","Otomobil","Yaşam","Futbol","Medya"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
