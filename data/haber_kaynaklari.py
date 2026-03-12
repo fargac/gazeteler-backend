@@ -147,8 +147,8 @@ NEWS_SOURCES = [
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
-            "link": RULE_LINK_STD,
-            "image": "description", # Milliyet'te URL description içindedir
+            "link": "atom:link",
+            "image": "description", 
             "dateTag": RULE_DATE_PUBDATE,
             "dateFormat": "ddd, DD MMM YYYY HH:mm:ss  Z" 
         }
