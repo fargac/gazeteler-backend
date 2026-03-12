@@ -23,6 +23,7 @@ NEWS_SOURCES = [
         "name": "Fenerbahçe",
         "rss": "https://www.fotomac.com.tr/rss/fenerbahce.xml",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -37,6 +38,7 @@ NEWS_SOURCES = [
         "name": "CNN Türk",
         "rss": "https://www.cnnturk.com/feed/rss/all/news",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -51,6 +53,7 @@ NEWS_SOURCES = [
         "name": "Beşiktaş",
         "rss": "https://www.fotomac.com.tr/rss/besiktas.xml",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -65,6 +68,7 @@ NEWS_SOURCES = [
         "name": "Galatasaray",
         "rss": "https://www.fotomac.com.tr/rss/galatasaray.xml",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -79,6 +83,7 @@ NEWS_SOURCES = [
         "name": "Trabzonspor",
         "rss": "https://www.fotomac.com.tr/rss/trabzonspor.xml",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -92,7 +97,8 @@ NEWS_SOURCES = [
         "id": "hurriyet",
         "name": "Hürriyet",
         "rss": "https://www.hurriyet.com.tr/rss/anasayfa",
-        "maxItems": 15,
+        "maxItems": 51,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial","Lezizz","Kelebek","Spor Arena","Dünya","Aile"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -107,6 +113,7 @@ NEWS_SOURCES = [
         "name": "Sözcü",
         "rss": "https://www.sozcu.com.tr/feeds-son-dakika",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -121,6 +128,7 @@ NEWS_SOURCES = [
         "name": "Sabah",
         "rss": "https://www.sabah.com.tr/rss/gundem.xml",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial","Yaşam"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -135,6 +143,7 @@ NEWS_SOURCES = [
         "name": "Milliyet",
         "rss": "https://www.milliyet.com.tr/rss/rssnew/sondakikarss.xml",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -149,6 +158,7 @@ NEWS_SOURCES = [
         "name": "Habertürk",
         "rss": "https://www.haberturk.com/rss/manset.xml",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -163,6 +173,7 @@ NEWS_SOURCES = [
         "name": "En Son Haber",
         "rss": "https://www.ensonhaber.com/rss/ensonhaber.xml",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial","3. Sayfa","Magazin","Otomobil"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -177,6 +188,7 @@ NEWS_SOURCES = [
         "name": "Mynet",
         "rss": "https://www.mynet.com/haber/rss/sondakika",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -191,6 +203,7 @@ NEWS_SOURCES = [
         "name": "Son Dakika",
         "rss": "https://rss.sondakika.com/rss_standart.asp",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -205,6 +218,7 @@ NEWS_SOURCES = [
         "name": "NTV Spor",
         "rss": "https://www.ntvspor.net/rss/anasayfa",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_ATOM, # Atom feed yapısı
             "title": RULE_TITLE_STD,
@@ -219,6 +233,7 @@ NEWS_SOURCES = [
         "name": "Fotomaç",
         "rss": "https://www.fotomac.com.tr/rss/son24saat.xml",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -233,6 +248,7 @@ NEWS_SOURCES = [
         "name": "Ekonomim",
         "rss": "https://www.ekonomim.com/rss",
         "maxItems": 15,
+        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
