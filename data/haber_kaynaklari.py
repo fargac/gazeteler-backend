@@ -173,7 +173,7 @@ NEWS_SOURCES = [
         "name": "En Son Haber",
         "rss": "https://www.ensonhaber.com/rss/ensonhaber.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial","3. Sayfa","Magazin","Otomobil"],
+        "excludeCategories": ["Resmi İlanlar", "Advertorial","3. Sayfa","Magazin","Otomobil","Yaşam","Futbol"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
