@@ -97,7 +97,7 @@ NEWS_SOURCES = [
         "id": "hurriyet",
         "name": "Hürriyet",
         "rss": "https://www.hurriyet.com.tr/rss/anasayfa",
-        "maxItems": 51,
+        "maxItems": 15,
         "excludeCategories": ["Resmi İlanlar", "Advertorial","Lezizz","Kelebek","Spor Arena","Aile"],
         "rules": {
             "item": RULE_ITEM_RSS,
