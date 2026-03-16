@@ -3,6 +3,7 @@ KEY_SATIS = "Satış"
 FORMAT_TR_CURRENCY = "tr_currency"
 
 PIYASA_CONFIG = {
+    "show_weather": True,
     "market_api": "https://finans.truncgil.com/today.json",
     "market_headers": {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
