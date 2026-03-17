@@ -17,13 +17,17 @@ RULE_DATE_PUBLISHED = "published"
 DATE_FORMAT_STD = "ddd, DD MMM YYYY HH:mm:ss ZZ"
 DATE_FORMAT_GMT = "ddd, DD MMM YYYY HH:mm:ss [GMT]"
 
+# ✨ SonarQube S1192 Çözümü: Tekrar eden kategoriler sabitlere alındı
+CAT_RESMI = "Resmi İlanlar"
+CAT_ADV = "Advertorial"
+
 NEWS_SOURCES = [
     {
         "id": "fenerbahce",
         "name": "Fenerbahçe",
         "rss": "https://www.fotomac.com.tr/rss/fenerbahce.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -38,12 +42,12 @@ NEWS_SOURCES = [
         "name": "CNN Türk",
         "rss": "https://www.cnnturk.com/feed/rss/all/news",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
             "link": RULE_LINK_STD,
-            "image": "image", # CNN Türk özel JSON node'u
+            "image": "image", 
             "dateTag": RULE_DATE_PUBDATE,
             "dateFormat": DATE_FORMAT_GMT
         }
@@ -53,7 +57,7 @@ NEWS_SOURCES = [
         "name": "Beşiktaş",
         "rss": "https://www.fotomac.com.tr/rss/besiktas.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -68,7 +72,7 @@ NEWS_SOURCES = [
         "name": "Galatasaray",
         "rss": "https://www.fotomac.com.tr/rss/galatasaray.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -83,7 +87,7 @@ NEWS_SOURCES = [
         "name": "Trabzonspor",
         "rss": "https://www.fotomac.com.tr/rss/trabzonspor.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -98,7 +102,7 @@ NEWS_SOURCES = [
         "name": "Hürriyet",
         "rss": "https://www.hurriyet.com.tr/rss/anasayfa",
         "maxItems": 16,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial","Lezizz","Kelebek","Spor Arena","Aile"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV, "Lezizz", "Kelebek", "Spor Arena", "Aile"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -113,7 +117,7 @@ NEWS_SOURCES = [
         "name": "Sözcü",
         "rss": "https://www.sozcu.com.tr/feeds-son-dakika",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -128,7 +132,7 @@ NEWS_SOURCES = [
         "name": "Sabah",
         "rss": "https://www.sabah.com.tr/rss/gundem.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial","Yaşam"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV, "Yaşam"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -143,7 +147,7 @@ NEWS_SOURCES = [
         "name": "Milliyet",
         "rss": "https://www.milliyet.com.tr/rss/rssnew/sondakikarss.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -157,7 +161,7 @@ NEWS_SOURCES = [
         "name": "Habertürk",
         "rss": "https://www.haberturk.com/rss/manset.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -172,7 +176,7 @@ NEWS_SOURCES = [
         "name": "En Son Haber",
         "rss": "https://www.ensonhaber.com/rss/gundem.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial","3. Sayfa","Magazin","Otomobil","Yaşam","Futbol","Medya"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV, "3. Sayfa", "Magazin", "Otomobil", "Yaşam", "Futbol", "Medya"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -187,12 +191,12 @@ NEWS_SOURCES = [
         "name": "Mynet",
         "rss": "https://www.mynet.com/haber/rss/sondakika",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
             "link": RULE_LINK_STD,
-            "image": "img640x360", # Mynet'e özel JSON etiketi
+            "image": "img640x360", 
             "dateTag": RULE_DATE_PUBDATE,
             "dateFormat": "ddd, DD MMM YY HH:mm:ss ZZ" 
         }
@@ -202,7 +206,7 @@ NEWS_SOURCES = [
         "name": "Son Dakika",
         "rss": "https://rss.sondakika.com/rss_standart.asp",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -217,9 +221,9 @@ NEWS_SOURCES = [
         "name": "NTV Spor",
         "rss": "https://www.ntvspor.net/rss/anasayfa",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
-            "item": RULE_ITEM_ATOM, # Atom feed yapısı
+            "item": RULE_ITEM_ATOM,
             "title": RULE_TITLE_STD,
             "link": RULE_LINK_STD,
             "image": RULE_IMAGE_ENCLOSURE,
@@ -232,7 +236,7 @@ NEWS_SOURCES = [
         "name": "Fotomaç",
         "rss": "https://www.fotomac.com.tr/rss/son24saat.xml",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
@@ -247,7 +251,7 @@ NEWS_SOURCES = [
         "name": "Ekonomim",
         "rss": "https://www.ekonomim.com/rss",
         "maxItems": 15,
-        "excludeCategories": ["Resmi İlanlar", "Advertorial"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
