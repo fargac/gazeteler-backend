@@ -8,3 +8,4 @@ __pycache__/
 # Sanal ortam
 venv/
 .venv/
+.env
