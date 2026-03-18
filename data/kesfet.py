@@ -109,7 +109,6 @@ KESFET_CONFIG = {
         {"id": "fatih_altayli", "name": "Fatih Altaylı", "link": "https://fatihaltayli.com.tr/yazilar/fatih-altayli/kose-yazilari"},
         {"id": "emin_colasan", "name": "Emin Çölaşan", "link": "https://www.sozcu.com.tr/kategori/emin-colasan-a26/"},
         {"id": "ertugrul_ozkok", "name": "Ertuğrul Özkök", "link": "https://10haber.net/yazarlar/ertugrul-ozkok/"},
-        {"id": "ilber_ortayli", "name": "İlber Ortaylı", "link": "https://m.hurriyet.com.tr/yazarlar/ilber-ortayli/"},
         {"id": "murat_bardakci", "name": "Murat Bardakçı", "link": "https://m.haberturk.com/htyazar/murat-bardakci"},
         {"id": "osman_muftuoglu", "name": "Osman Müftüoğlu", "link": "https://m.hurriyet.com.tr/yazarlar/osman-muftuoglu/"},
         {"id": "soner_yalcin", "name": "Soner Yalçın", "link": "https://www.sozcu.com.tr/kategori/soner-yalcin-a31"},
