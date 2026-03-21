@@ -1,3 +1,5 @@
+# diger_ayarlar.py
+
 # Ortak Sabitler (SonarQube S1192 Çözümü)
 KEY_SATIS = "Satış"
 FORMAT_TR_CURRENCY = "tr_currency"
@@ -14,7 +16,10 @@ PIYASA_CONFIG = {
         "gold": {"key": "gram-altin", "subKey": KEY_SATIS, "format": FORMAT_TR_CURRENCY},
         "ceyrek": {"key": "ceyrek-altin", "subKey": KEY_SATIS, "format": FORMAT_TR_CURRENCY}
     },
-    "weather_api_base": "https://api.open-meteo.com/v1/forecast"
+    "weather_api_base": "https://api.open-meteo.com/v1/forecast",
+    
+    # 🔥 YENİ: Konum bulma API'si artık backend'den gönderiliyor
+    "geocode_api_base": "https://api.bigdatacloud.net/data/reverse-geocode-client"
 }
 
 ADS_CONFIG = {
