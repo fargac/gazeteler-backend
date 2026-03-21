@@ -28,25 +28,26 @@ ADS_CONFIG = {
 }
 
 base = "https://i13.haber7.net/haber7/gazete"
+
 MANSETLER_CONFIG = [
-    {"id": "manset_hurriyet", "name": "Hürriyet", "pattern": f"{base}/hurriyet"},
-    {"id": "manset_sabah", "name": "Sabah", "pattern": f"{base}/sabah"},
-    {"id": "manset_milliyet", "name": "Milliyet", "pattern": f"{base}/milliyet"},
-    {"id": "manset_turkiye", "name": "Türkiye", "pattern": f"{base}/turkiye"},
-    {"id": "manset_aksam", "name": "Akşam", "pattern": f"{base}/aksam"},
-    {"id": "manset_yeni_safak", "name": "Yeni Şafak", "pattern": f"{base}/yeni-safak"},
-    {"id": "manset_yeni_akit", "name": "Yeni Akit", "pattern": f"{base}/yeni-akit"},
-    {"id": "manset_dirilis_postasi", "name": "Diriliş P.", "pattern": f"{base}/dirilis-postasi"},
-    {"id": "manset_milat", "name": "Milat", "pattern": f"{base}/milat"},
-    {"id": "manset_turkgun", "name": "Türkgün", "pattern": f"{base}/turkgun"},
-    {"id": "manset_yeni_birlik", "name": "Yeni Birlik", "pattern": f"{base}/yeni-birlik"},
-    {"id": "manset_milli_gazete", "name": "Milli Gazete", "pattern": f"{base}/milli-gazete"},
-    {"id": "manset_dunya", "name": "Dünya", "pattern": f"{base}/dunya"},
-    {"id": "manset_yeni_cag", "name": "Yeniçağ", "pattern": f"{base}/yenicag"},
-    {"id": "manset_yeni_soz", "name": "Yenisöz", "pattern": f"{base}/yenisoz"},
-    {"id": "manset_aydinlik", "name": "Aydınlık", "pattern": f"{base}/aydinlik"},
-    {"id": "manset_dogru-haber", "name": "Doğru Haber", "pattern": f"{base}/dogru-haber"},
-    {"id": "manset_takvim", "name": "Takvim", "pattern": f"{base}/takvim-gazetesi"},
-    {"id": "manset_fanatik", "name": "Fanatik", "pattern": f"{base}/fanatik"},
-    {"id": "manset_fotomac", "name": "Fotomaç", "pattern": f"{base}/fotomac"}
+    {"id": "manset_hurriyet", "name": "Hürriyet", "pattern": f"{base}/hurriyet", "link": "https://www.hurriyet.com.tr"},
+    {"id": "manset_sabah", "name": "Sabah", "pattern": f"{base}/sabah", "link": "https://www.sabah.com.tr"},
+    {"id": "manset_milliyet", "name": "Milliyet", "pattern": f"{base}/milliyet", "link": "https://www.milliyet.com.tr"},
+    {"id": "manset_turkiye", "name": "Türkiye", "pattern": f"{base}/turkiye", "link": "https://www.turkiyegazetesi.com.tr"},
+    {"id": "manset_aksam", "name": "Akşam", "pattern": f"{base}/aksam", "link": "https://www.aksam.com.tr"},
+    {"id": "manset_yeni_safak", "name": "Yeni Şafak", "pattern": f"{base}/yeni-safak", "link": "https://www.yenisafak.com"},
+    {"id": "manset_yeni_akit", "name": "Yeni Akit", "pattern": f"{base}/yeni-akit", "link": "https://www.yeniakit.com.tr"},
+    {"id": "manset_dirilis_postasi", "name": "Diriliş P.", "pattern": f"{base}/dirilis-postasi", "link": "https://www.dirilispostasi.com"},
+    {"id": "manset_milat", "name": "Milat", "pattern": f"{base}/milat", "link": "https://www.milatgazetesi.com"},
+    {"id": "manset_turkgun", "name": "Türkgün", "pattern": f"{base}/turkgun", "link": "https://www.turkgun.com"},
+    {"id": "manset_yeni_birlik", "name": "Yeni Birlik", "pattern": f"{base}/yeni-birlik", "link": "https://www.gazetebirlik.com"},
+    {"id": "manset_milli_gazete", "name": "Milli Gazete", "pattern": f"{base}/milli-gazete", "link": "https://www.milligazete.com.tr"},
+    {"id": "manset_dunya", "name": "Dünya", "pattern": f"{base}/dunya", "link": "https://www.dunya.com"},
+    {"id": "manset_yeni_cag", "name": "Yeniçağ", "pattern": f"{base}/yenicag", "link": "https://www.yenicaggazetesi.com.tr"},
+    {"id": "manset_yeni_soz", "name": "Yenisöz", "pattern": f"{base}/yenisoz", "link": "https://www.yenisoz.com.tr"},
+    {"id": "manset_aydinlik", "name": "Aydınlık", "pattern": f"{base}/aydinlik", "link": "https://www.aydinlik.com.tr"},
+    {"id": "manset_dogru-haber", "name": "Doğru Haber", "pattern": f"{base}/dogru-haber", "link": "https://dogruhaber.com.tr"},
+    {"id": "manset_takvim", "name": "Takvim", "pattern": f"{base}/takvim-gazetesi", "link": "https://www.takvim.com.tr"},
+    {"id": "manset_fanatik", "name": "Fanatik", "pattern": f"{base}/fanatik", "link": "https://www.fanatik.com.tr"},
+    {"id": "manset_fotomac", "name": "Fotomaç", "pattern": f"{base}/fotomac", "link": "https://www.fotomac.com.tr"}
 ]
