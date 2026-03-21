@@ -190,7 +190,7 @@ NEWS_SOURCES = [
         "id": "mynet",
         "name": "Mynet",
         "rss": "https://www.mynet.com/haber/rss/sondakika",
-        "maxItems": 15,
+        "maxItems": 20,
         "excludeCategories": [CAT_RESMI, CAT_ADV],
         "rules": {
             "item": RULE_ITEM_RSS,
