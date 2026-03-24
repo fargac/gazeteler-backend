@@ -23,8 +23,10 @@ PIYASA_CONFIG = {
 }
 
 ADS_CONFIG = {
-    "ad_frequency": 15,
-    "app_open_cooldown": 3
+   "interstitial_frequency": 5,    # Kaç tıklamada bir geçiş reklamı çıkacak
+    "interstitial_cooldown": 60,    # İki geçiş reklamı arası minimum saniye
+    "app_open_cooldown": 30,        # Açılış reklamı arası minimum dakika
+    "native_ad_interval": 6         # Akışta kaç haberde bir reklam çıkacak
 }
 
 base = "https://i13.haber7.net/haber7/gazete"
