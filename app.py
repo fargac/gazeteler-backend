@@ -12,8 +12,7 @@ from dotenv import load_dotenv
 from data.haber_kaynaklari import NEWS_SOURCES
 from data.takimlar import TAKIMLAR
 from data.kesfet import KESFET_CONFIG
-from data.diger_ayarlar import PIYASA_CONFIG, MANSETLER_CONFIG, ADS_CONFIG
-
+from data.diger_ayarlar import PIYASA_CONFIG, MANSETLER_CONFIG, ADS_CONFIG, APP_GENERAL_CONFIG
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
@@ -29,7 +28,8 @@ def get_all_configs_data():
         "mansetler": MANSETLER_CONFIG,
         "kesfet": KESFET_CONFIG,
         "takimlar": TAKIMLAR,
-        "ads": ADS_CONFIG
+        "ads": ADS_CONFIG,
+        "appGeneralConfig": APP_GENERAL_CONFIG
     }
 
 @lru_cache(maxsize=1)

@@ -4,6 +4,13 @@
 KEY_SATIS = "Satış"
 FORMAT_TR_CURRENCY = "tr_currency"
 
+APP_GENERAL_CONFIG = {
+    "webview_agents": {
+        "android": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36",
+        "ios": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1"
+    }
+}
+
 PIYASA_CONFIG = {
     "show_weather": True,
     "market_api": "https://finans.truncgil.com/today.json",
