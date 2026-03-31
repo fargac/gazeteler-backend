@@ -348,7 +348,7 @@ def main():
 
             # Bu yazarı favorileyen kullanıcıların token'larını bul
             users = favorites_ref.where(
-                "favoriteAuthorIds", "array-contains", author["id"]
+                "favoriteAuthorIds", "array_contains", author["id"]
             ).stream()
 
             tokens = [doc.id for doc in users]  # doc.id = FCM token
