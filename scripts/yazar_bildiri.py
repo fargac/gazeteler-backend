@@ -326,94 +326,99 @@ def main():
     for author in AUTHORS:
         log.info(f"Kontrol ediliyor: {author['name']}")
 
-        finder = FINDERS.get(author["source"])
-        if not finder:
-            log.warning(f"Finder bulunamadı: {author['source']}")
-            continue
+        try:
+            finder = FINDERS.get(author["source"])
+            if not finder:
+                log.warning(f"Finder bulunamadı: {author['source']}")
+                continue
 
-        article = finder(author)
-        if not article:
-            log.info(f"  → Bugün yeni makale yok: {author['name']}")
-            continue
+            article = finder(author)
+            if not article:
+                log.info(f"  → Bugün yeni makale yok: {author['name']}")
+                continue
 
-        log.info(f"  → Makale bulundu: {article['url']}")
+            log.info(f"  → Makale bulundu: {article['url']}")
 
-        # Daha önce gönderildi mi?
-        article_id = url_hash(article["url"])
-        sent_doc = sent_ref.document(article_id).get()
-        if sent_doc.exists:
-            log.info(f"  → Zaten gönderildi, atlanıyor.")
-            continue
+            # Daha önce gönderildi mi?
+            article_id = url_hash(article["url"])
+            sent_doc = sent_ref.document(article_id).get()
+            if sent_doc.exists:
+                log.info(f"  → Zaten gönderildi, atlanıyor.")
+                continue
 
-        # Bu yazarı favorileyen kullanıcıların token'larını bul
-        users = favorites_ref.where(
-            "favoriteAuthorIds", "array-contains", author["id"]
-        ).stream()
+            # Bu yazarı favorileyen kullanıcıların token'larını bul
+            users = favorites_ref.where(
+                "favoriteAuthorIds", "array-contains", author["id"]
+            ).stream()
 
-        tokens = [doc.id for doc in users]  # doc.id = FCM token
+            tokens = [doc.id for doc in users]  # doc.id = FCM token
 
-        if not tokens:
-            log.info(f"  → Favorileyен kullanıcı yok: {author['name']}")
-            # Yine de gönderildi olarak işaretle
+            if not tokens:
+                log.info(f"  → Favorileyen kullanıcı yok: {author['name']}")
+                # Yine de gönderildi olarak işaretle
+                sent_ref.document(article_id).set({
+                    "url": article["url"],
+                    "authorId": author["id"],
+                    "sentAt": firestore.SERVER_TIMESTAMP,
+                })
+                continue
+
+            log.info(f"  → {len(tokens)} kullanıcıya gönderiliyor...")
+
+            # FCM multicast — max 500 token per batch
+            batch_size = 500
+            success_count = 0
+
+            for i in range(0, len(tokens), batch_size):
+                batch_tokens = tokens[i:i + batch_size]
+                message = messaging.MulticastMessage(
+                    tokens=batch_tokens,
+                    notification=messaging.Notification(
+                        title=author["name"],
+                        body=article["title"],
+                    ),
+                    data={"url": article["url"]},
+                    android=messaging.AndroidConfig(
+                        priority="high",
+                        notification=messaging.AndroidNotification(
+                            sound="default",
+                        ),
+                    ),
+                    apns=messaging.APNSConfig(
+                        payload=messaging.APNSPayload(
+                            aps=messaging.Aps(sound="default"),
+                        ),
+                    ),
+                )
+
+                response = messaging.send_each_for_multicast(message)
+                success_count += response.success_count
+
+                # Bozuk token'ları Firestore'dan sil
+                for idx, resp in enumerate(response.responses):
+                    if not resp.success:
+                        error_code = resp.exception.code if resp.exception else ""
+                        if error_code in (
+                            "messaging/registration-token-not-registered",
+                            "messaging/invalid-registration-token",
+                        ):
+                            bad_token = batch_tokens[idx]
+                            favorites_ref.document(bad_token).delete()
+                            log.info(f"  → Bozuk token silindi: {bad_token[:20]}...")
+
+            log.info(f"  → Gönderildi: {success_count}/{len(tokens)} başarılı")
+
+            # Gönderildi olarak işaretle
             sent_ref.document(article_id).set({
                 "url": article["url"],
                 "authorId": author["id"],
+                "authorName": author["name"],
                 "sentAt": firestore.SERVER_TIMESTAMP,
             })
+
+        except Exception as e:
+            log.error(f"❌ {author['name']} işlenirken beklenmeyen hata oluştu: {e}")
             continue
-
-        log.info(f"  → {len(tokens)} kullanıcıya gönderiliyor...")
-
-        # FCM multicast — max 500 token per batch
-        batch_size = 500
-        success_count = 0
-
-        for i in range(0, len(tokens), batch_size):
-            batch_tokens = tokens[i:i + batch_size]
-            message = messaging.MulticastMessage(
-                tokens=batch_tokens,
-                notification=messaging.Notification(
-                    title=author["name"],
-                    body=article["title"],
-                ),
-                data={"url": article["url"]},
-                android=messaging.AndroidConfig(
-                    priority="high",
-                    notification=messaging.AndroidNotification(
-                        sound="default",
-                    ),
-                ),
-                apns=messaging.APNSConfig(
-                    payload=messaging.APNSPayload(
-                        aps=messaging.Aps(sound="default"),
-                    ),
-                ),
-            )
-
-            response = messaging.send_each_for_multicast(message)
-            success_count += response.success_count
-
-            # Bozuk token'ları Firestore'dan sil
-            for idx, resp in enumerate(response.responses):
-                if not resp.success:
-                    error_code = resp.exception.code if resp.exception else ""
-                    if error_code in (
-                        "messaging/registration-token-not-registered",
-                        "messaging/invalid-registration-token",
-                    ):
-                        bad_token = batch_tokens[idx]
-                        favorites_ref.document(bad_token).delete()
-                        log.info(f"  → Bozuk token silindi: {bad_token[:20]}...")
-
-        log.info(f"  → Gönderildi: {success_count}/{len(tokens)} başarılı")
-
-        # Gönderildi olarak işaretle
-        sent_ref.document(article_id).set({
-            "url": article["url"],
-            "authorId": author["id"],
-            "authorName": author["name"],
-            "sentAt": firestore.SERVER_TIMESTAMP,
-        })
 
     log.info("✅ Tüm yazarlar kontrol edildi.")
 
