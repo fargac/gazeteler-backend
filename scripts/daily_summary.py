@@ -1,6 +1,7 @@
 import os
 import json
 import feedparser
+import time
 import firebase_admin
 from firebase_admin import credentials, messaging, firestore
 from datetime import datetime, timezone, timedelta
@@ -125,11 +126,26 @@ def send_to_firebase(summary_data):
 if __name__ == "__main__":
     raw_news = get_todays_news()
     if len(raw_news) > 5:
-        try:
-            summary = generate_ai_summary(raw_news)
-            send_to_firebase(summary)
-            print("✅ TÜM İŞLEMLER BAŞARIYLA TAMAMLANDI!")
-        except Exception as e:
-            print(f"❌ Yapay Zeka veya Firebase aşamasında kritik hata: {e}")
+        max_deneme = 3
+        
+        for deneme in range(max_deneme):
+            try:
+                summary = generate_ai_summary(raw_news)
+                send_to_firebase(summary)
+                print("✅ TÜM İŞLEMLER BAŞARIYLA TAMAMLANDI!")
+                break  # Başarılı olursa döngüyü kır ve bitir
+                
+            except Exception as e:
+                hata_mesaji = str(e)
+                if "503" in hata_mesaji or "429" in hata_mesaji or "UNAVAILABLE" in hata_mesaji:
+                    bekleme_suresi = 15 * (deneme + 1) # 15sn, sonra 30sn bekler
+                    print(f"⚠️ Gemini API şu an yoğun (Deneme {deneme + 1}/{max_deneme}). {bekleme_suresi} saniye bekleniyor...")
+                    time.sleep(bekleme_suresi)
+                else:
+                    print(f"❌ Yapay Zeka veya Firebase aşamasında kritik hata: {e}")
+                    break # 503 dışında bir hataysa (örneğin auth hatası) direkt dur
+        else:
+            print("❌ Sunucular ısrarla yanıt vermedi, maksimum deneme sınırına ulaşıldı.")
+            
     else:
         print("⚠️ Yeterli yeni haber bulunamadı, işlem iptal edildi.")
