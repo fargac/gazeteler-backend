@@ -1,0 +1,30 @@
+name: Gezo Gündem Günün Özeti Otomasyonu
+
+on:
+  schedule:
+    # ⚠️ GitHub UTC saatini kullanır. 
+    # Türkiye saatiyle 20:30'da çalışması için (UTC+3) -> 17:30 ayarlanmalı.
+    - cron: '30 17 * * *'
+  workflow_dispatch: # İstediğin zaman GitHub üzerinden manuel çalıştırmak için buton ekler
+
+jobs:
+  run-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodları Çek
+        uses: actions/checkout@v4
+
+      - name: Python Kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Kütüphaneleri Yükle
+        run: |
+          pip install firebase-admin google-generativeai feedparser python-dateutil
+
+      - name: Günün Özetini Hazırla ve Gönder
+        env:
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/daily_summary.py
