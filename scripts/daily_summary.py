@@ -33,7 +33,7 @@ def get_todays_news():
     # Türkiye saatiyle (UTC+3) bugünün başlangıcını bul
     tr_tz = timezone(timedelta(hours=3))
     now_tr = datetime.now(tr_tz)
-    today_start = now_tr.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = now_tr - timedelta(hours=24)
 
     print(f"🔎 {now_tr.strftime('%d.%m.%Y')} tarihli haberler taranıyor...")
 
