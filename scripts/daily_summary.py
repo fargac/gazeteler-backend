@@ -19,7 +19,7 @@ SOURCES = [
 
 # 2. BAĞLANTILAR (Environment Variables)
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 if not firebase_admin._apps:
     cred_json = os.environ.get("FIREBASE_CREDENTIALS")
