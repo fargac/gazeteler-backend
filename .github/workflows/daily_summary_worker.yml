@@ -21,7 +21,7 @@ jobs:
 
       - name: Kütüphaneleri Yükle
         run: |
-          pip install firebase-admin google-generativeai feedparser python-dateutil
+          pip install firebase-admin google-genai feedparser python-dateutil
 
       - name: Günün Özetini Hazırla ve Gönder
         env:
