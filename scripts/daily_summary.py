@@ -95,19 +95,24 @@ def generate_ai_summary(news_data):
     return json.loads(clean_response)
 
 def send_to_firebase(summary_data):
-    # 1. ADIM: Bildirimi Fırlat
+    doc_id = datetime.now().strftime("%Y-%m-%d")
+
+    # 1. ADIM: Bildirimi Fırlat (Data payload'ı eklendi)
     message = messaging.Message(
         notification=messaging.Notification(
             title=summary_data['push_title'],
             body=summary_data['push_body']
         ),
+        data={
+            "type": "daily_summary",
+            "date": doc_id
+        },
         topic="all_users"
     )
     messaging.send(message)
     print("🚀 Bildirim başarıyla fırlatıldı!")
 
     # 2. ADIM: Uygulama İçi Vitrin İçin Firestore'a Kaydet
-    doc_id = datetime.now().strftime("%Y-%m-%d")
     db.collection("daily_summaries").document(doc_id).set({
         "items": summary_data['detailed_summary'],
         "sources": summary_data['sources_used'],
