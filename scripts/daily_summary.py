@@ -63,15 +63,14 @@ def get_todays_news():
 def generate_ai_summary(news_data):
     # Gemini'ye gidecek metni hazırla
     news_text = "\n".join([f"- [{n['source']}] {n['title']}" for n in news_data])
-    
     prompt = f"""
-    Sen Gezo Gündem uygulamasının baş editörüsün. Aşağıda sana Türkiye'nin en büyük 6 kaynağından gelen bugünün haber başlıklarını sunuyorum:
+    Sen Gezo Gündem uygulamasının baş editörüsün. Aşağıda sana Türkiye'nin en büyük 6 kaynağından gelen son 24 saatin haber başlıklarını sunuyorum:
     
     {news_text}
     
     GÖREVİN:
-    1. Bu haberleri analiz et, aynı konudaki haberleri tek bir maddede birleştir.
-    2. Türkiye gündemi için en hayati 6 maddeyi seç.
+    1. Bu haberleri analiz et. Eski, etkisini yitirmiş veya dünden kalan önemsiz haberleri tamamen ELE.
+    2. Sadece BUGÜNÜN gündemine damga vuran, hala güncelliğini ve sıcaklığını koruyan en hayati 6 maddeyi seç. Aynı konudaki haberleri tek maddede birleştir.
     3. Şeffaflık gereği, bu özeti hazırlarken yararlandığın TÜM kaynakların adını metnin en sonunda belirt.
     4. Yanıtı SADECE aşağıdaki JSON formatında ver, başka açıklama yazma:
     {{
@@ -80,7 +79,9 @@ def generate_ai_summary(news_data):
         "detailed_summary": ["Madde 1", "Madde 2", "Madde 3", "Madde 4", "Madde 5", "Madde 6"],
         "sources_used": "Kaynak 1 • Kaynak 2 • Kaynak 3"
     }}
-    """
+    """  
+  
+ 
     
     # YEPYENİ SDK KULLANIMI VE GEMINI 2.0 FLASH
     # API key'i GitHub Actions'dan garantili şekilde alıyoruz
