@@ -86,7 +86,10 @@ def generate_ai_summary(news_data):
     
     # YEPYENİ SDK KULLANIMI VE GEMINI 2.0 FLASH
     # API key'i GitHub Actions'dan garantili şekilde alıyoruz
-    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY")) 
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    if not gemini_key:
+        raise EnvironmentError("GEMINI_API_KEY eksik!")
+    client = genai.Client(api_key=gemini_key)
     response = client.models.generate_content(
         model='gemini-2.5-flash', 
         contents=prompt
@@ -94,7 +97,10 @@ def generate_ai_summary(news_data):
     
     # JSON temizleme (Markdown taglarını kaldırır)
     clean_response = response.text.replace('```json', '').replace('```', '').strip()
-    return json.loads(clean_response)
+    try:
+        return json.loads(clean_response)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Gemini geçersiz JSON döndürdü: {e}\nYanıt: {clean_response[:200]}")
 
 def send_to_firebase(summary_data):
     doc_id = datetime.now().strftime("%Y-%m-%d")
