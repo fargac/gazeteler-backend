@@ -103,12 +103,13 @@ KESFET_CONFIG = {
         {"id": "al_jazeera", "name": "Al Jazeera", "link": "https://www.aljazeera.com/"}
     ],
     "yazarlar": [
+        {"id": "cigdem_toker", "name": "Çiğdem Toker", "link": "https://t24.com.tr/yazarlar/cigdem-toker"},
+        {"id": "nihal_bengisu_karaca", "name": "N. Bengisu Karaca", "link": "https://www.haberturk.com/ozel-icerikler/nihal-bengisu-karaca"},
         {"id": "nedim_sener", "name": "Nedim Şener", "link": "https://www.hurriyet.com.tr/yazarlar/nedim-sener/"},
         {"id": "fatih_altayli", "name": "Fatih Altaylı", "link": "https://fatihaltayli.com.tr/yazilar/fatih-altayli/kose-yazilari"},
         {"id": "ahmet_hakan", "name": "Ahmet Hakan", "link": "https://m.hurriyet.com.tr/yazarlar/ahmet-hakan/"},
         {"id": "ertugrul_ozkok", "name": "Ertuğrul Özkök", "link": "https://10haber.net/yazarlar/ertugrul-ozkok/"},
         {"id": "murat_bardakci", "name": "Murat Bardakçı", "link": "https://m.haberturk.com/htyazar/murat-bardakci"},
-        {"id": "osman_muftuoglu", "name": "Osman Müftüoğlu", "link": "https://m.hurriyet.com.tr/yazarlar/osman-muftuoglu/"},
         {"id": "mahfi_egilmez", "name": "Mahfi Eğilmez", "link": "https://www.mahfiegilmez.com/"},
         {"id": "yilmaz_ozdil", "name": "Yılmaz Özdil", "link": "https://www.sozcu.com.tr/yilmaz-ozdil-a2158"},
         {"id": "ismail_saymaz", "name": "İsmail Saymaz", "link": "https://www.sozcu.com.tr/ismail-saymaz-a36"},
