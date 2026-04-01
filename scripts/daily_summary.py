@@ -2,7 +2,7 @@ import os
 import json
 import feedparser
 import firebase_admin
-import google.generativeai as genai
+from google import genai
 from firebase_admin import credentials, messaging, firestore
 from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
@@ -83,8 +83,14 @@ def generate_ai_summary(news_data):
     }}
     """
     
-    response = model.generate_content(prompt)
-    # JSON temizleme (bazı durumlarda Gemini ```json ... ``` içinde verebiliyor)
+    # YEPYENİ SDK KULLANIMI:
+    client = genai.Client() # Şifreyi otomatik os.environ.get("GEMINI_API_KEY")'den alır
+    response = client.models.generate_content(
+        model='gemini-2.0-flash', # En yeni ve güncel model
+        contents=prompt
+    )
+    
+    # JSON temizleme
     clean_response = response.text.replace('```json', '').replace('```', '').strip()
     return json.loads(clean_response)
 
