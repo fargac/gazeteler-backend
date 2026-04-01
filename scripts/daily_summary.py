@@ -126,7 +126,7 @@ def send_to_firebase(summary_data):
 if __name__ == "__main__":
     raw_news = get_todays_news()
     if len(raw_news) > 5:
-        max_deneme = 3
+        max_deneme = 4
         
         for deneme in range(max_deneme):
             try:
