@@ -1,22 +1,30 @@
 """
 Yazar Bildirim Sistemi
 GitHub Actions ile her sabah 07:00'de çalışır.
+Paralel tarama ve hata durumunda e-posta bildirimi içerir.
 """
 
 import os
 import json
 import hashlib
 import logging
+import smtplib
+from email.mime.text import MIMEText
 from datetime import datetime, timezone
 from typing import Optional
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from bs4 import BeautifulSoup
 import firebase_admin
 from firebase_admin import credentials, firestore, messaging
 
+# Log ayarları
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
+
+# E-posta bildiriminin gideceği adres
+TARGET_EMAIL = "fargac@gmail.com"
 
 AUTHORS = [
     # ── Sözcü (RSS) ──────────────────────────────────────────────────────────
@@ -93,6 +101,30 @@ HEADERS = {
     )
 }
 
+def send_error_email(author_name: str, error_message: str):
+    """Hata durumunda e-posta gönderir."""
+    msg_user = os.environ.get("EMAIL_USER")
+    msg_pass = os.environ.get("EMAIL_PASS")
+
+    if not msg_user or not msg_pass:
+        log.error("E-posta gönderimi için EMAIL_USER veya EMAIL_PASS eksik. Bildirim gönderilemedi.")
+        return
+
+    subject = f"⚠️ Yazar Sistemi Hatası: {author_name}"
+    body = f"Yazar bildirim sistemi {author_name} için veri çekerken hata aldı.\n\nDetaylar:\n{error_message}\n\nLütfen ilgili HTML yapısını veya RSS adresini kontrol edin."
+    
+    msg = MIMEText(body, "plain", "utf-8")
+    msg['Subject'] = subject
+    msg['From'] = msg_user
+    msg['To'] = TARGET_EMAIL
+
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(msg_user, msg_pass)
+            server.sendmail(msg_user, TARGET_EMAIL, msg.as_string())
+        log.info(f"📧 Hata bildirimi {TARGET_EMAIL} adresine başarıyla gönderildi.")
+    except Exception as e:
+        log.error(f"❌ E-posta gönderme işlemi başarısız oldu: {e}")
 
 def fetch(url: str, timeout: int = 10) -> Optional[requests.Response]:
     try:
@@ -103,15 +135,12 @@ def fetch(url: str, timeout: int = 10) -> Optional[requests.Response]:
         log.warning(f"Fetch hatası [{url}]: {e}")
         return None
 
-
 def url_hash(url: str) -> str:
     return hashlib.md5(url.encode()).hexdigest()
 
-
 def find_from_rss(author: dict) -> Optional[dict]:
     r = fetch(author["rss"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.content, "xml")
     today = datetime.now(timezone.utc).date()
     for item in soup.find_all("item"):
@@ -120,8 +149,7 @@ def find_from_rss(author: dict) -> Optional[dict]:
             continue
         link_tag = item.find("link")
         pub_tag = item.find("pubDate")
-        if not link_tag:
-            continue
+        if not link_tag: continue
         if pub_tag:
             try:
                 from email.utils import parsedate_to_datetime
@@ -133,76 +161,62 @@ def find_from_rss(author: dict) -> Optional[dict]:
         return {"url": link_tag.text.strip(), "title": desc.text.strip()[:100]}
     return None
 
-
 def find_from_hurriyet(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     for box in soup.select("a.author-box"):
         name_tag = box.select_one("span.name")
         if not name_tag or author["name"].lower() not in name_tag.text.lower():
             continue
         href = box.get("href", "")
-        if not href:
-            continue
+        if not href: continue
         title_tag = box.select_one("span.title")
         url = href if href.startswith("http") else f"https://www.hurriyet.com.tr{href}"
         return {"url": url, "title": title_tag.text.strip() if title_tag else author["name"]}
     return None
 
-
 def find_from_sabah(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     for li in soup.select("div.manset.writer ul li"):
         name_tag = li.select_one("strong:not(.sub)")
         if not name_tag or author["name"].lower() not in name_tag.text.lower():
             continue
         a_tag = li.find("a")
-        if not a_tag:
-            continue
+        if not a_tag: continue
         href = a_tag.get("href", "")
         url = href if href.startswith("http") else f"https://www.sabah.com.tr{href}"
         title_tag = li.select_one("strong.sub")
         return {"url": url, "title": title_tag.text.strip() if title_tag else author["name"]}
     return None
 
-
 def find_from_altayli(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today_str = datetime.now(timezone.utc).date().strftime("%Y-%m-%d")
     for a in soup.select("a.blog-item"):
         href = a.get("href", "")
-        if today_str not in href:
-            continue
+        if today_str not in href: continue
         url = href if href.startswith("http") else f"https://fatihaltayli.com.tr{href}"
         return {"url": url, "title": (a.get("title") or a.get_text(strip=True))[:100]}
     return None
 
-
 def find_from_10haber(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     a = soup.select_one("article a, .post a, h2 a")
-    if not a:
-        return None
+    if not a: return None
     href = a.get("href", "")
     url = href if href.startswith("http") else f"https://10haber.net{href}"
     return {"url": url, "title": a.get_text(strip=True)[:100]}
 
-
 def find_from_karar(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
     for article in soup.select("section.author-article article.item, article.item.box-shadow"):
@@ -213,44 +227,36 @@ def find_from_karar(author: dict) -> Optional[dict]:
                 continue
         a_tag = article.find("a")
         h3 = article.find("h3")
-        if not a_tag:
-            continue
+        if not a_tag: continue
         href = a_tag.get("href", "")
         url = href if href.startswith("http") else f"https://www.karar.com{href}"
         return {"url": url, "title": h3.text.strip()[:100] if h3 else author["name"]}
     return None
 
-
 def find_from_t24(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
     for a in soup.select("section.aramakartalanimobil a[href]"):
         date_tag = a.select_one("div.aramakartalanimobilcardtarih")
-        if date_tag and str(today.day) not in date_tag.text:
-            continue
+        if date_tag and str(today.day) not in date_tag.text: continue
         h4 = a.select_one("h4, div.aramakartalanimobilcardbaslik")
         href = a.get("href", "")
         url = href if href.startswith("http") else f"https://t24.com.tr{href}"
         return {"url": url, "title": h4.text.strip()[:100] if h4 else author["name"]}
     return None
 
-
 def find_from_cumhuriyet(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
     container = soup.select_one("div#articles-container")
-    if not container:
-        return None
+    if not container: return None
     for a in container.select("a[href]"):
         title_div = a.select_one("div.font-semibold, div.line-clamp-2")
-        if not title_div:
-            continue
+        if not title_div: continue
         time_tag = a.find("time") or a.select_one("div.text-xs")
         if time_tag:
             date_text = time_tag.get("datetime", "") or time_tag.text
@@ -261,188 +267,148 @@ def find_from_cumhuriyet(author: dict) -> Optional[dict]:
         return {"url": url, "title": title_div.text.strip()[:100]}
     return None
 
-
 def find_from_mahfi(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
     for article in soup.select("article.post"):
         date_tag = article.select_one("time, .post-date, abbr.published")
         if date_tag:
             date_text = date_tag.get("datetime", "") or date_tag.get("title", "") or date_tag.text
-            if str(today.year) not in date_text:
-                continue
+            if str(today.year) not in date_text: continue
         a = article.select_one("h3.post-title a")
-        if not a:
-            continue
+        if not a: continue
         href = a.get("href", "")
         url = href if href.startswith("http") else f"https://www.mahfiegilmez.com{href}"
         return {"url": url, "title": a.text.strip()[:100]}
     return None
 
-
 def find_from_fotomac(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
     for item in soup.select("div.archive-item"):
         date_tag = item.select_one("span.text-date, span.date")
-        if date_tag and str(today.day) not in date_tag.text:
-            continue
+        if date_tag and str(today.day) not in date_tag.text: continue
         a = item.find("a")
         h3 = item.find("h3", id="article-title") or item.find("h3")
-        if not a:
-            continue
+        if not a: continue
         href = a.get("href", "")
         url = href if href.startswith("http") else f"https://www.fotomac.com.tr{href}"
         return {"url": url, "title": h3.text.strip()[:100] if h3 else author["name"]}
     return None
 
-
 def find_from_star(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
     for li in soup.select("ul.main li"):
         date_div = li.select_one("div.date")
-        if date_div and str(today.day) not in date_div.text:
-            continue
+        if date_div and str(today.day) not in date_div.text: continue
         a = li.find("a")
         title_div = li.select_one("div.font-size-20")
-        if not a:
-            continue
+        if not a: continue
         href = a.get("href", "")
         url = href if href.startswith("http") else f"https://m.star.com.tr{href}"
         return {"url": url, "title": title_div.text.strip()[:100] if title_div else author["name"]}
     return None
 
-
 def find_from_nefes(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
     for article in soup.select("section.author-posts article.article-card"):
         time_tag = article.find("time")
-        if time_tag and str(today.day) not in time_tag.text:
-            continue
+        if time_tag and str(today.day) not in time_tag.text: continue
         a = article.find("a")
         title_span = article.select_one("span:not(.article-icon)")
-        if not a:
-            continue
+        if not a: continue
         href = a.get("href", "")
         url = href if href.startswith("http") else f"https://nefes.com.tr{href}"
         return {"url": url, "title": title_span.text.strip()[:100] if title_span else author["name"]}
     return None
 
-
 def find_from_habervakti(author: dict) -> Optional[dict]:
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
     for card in soup.select("div.card"):
         date_div = card.select_one("div.small.text-secondary")
-        if date_div and "Bugün" not in date_div.text and str(today.day) not in date_div.text:
-            continue
+        if date_div and "Bugün" not in date_div.text and str(today.day) not in date_div.text: continue
         a = card.select_one("h4.lead a")
-        if not a:
-            continue
+        if not a: continue
         href = a.get("href", "")
         url = href if href.startswith("http") else f"https://www.habervakti.com{href}"
         return {"url": url, "title": a.text.strip()[:100]}
     return None
 
-
 def find_from_nihal(author: dict) -> Optional[dict]:
-    """Habertürk özel içerik sayfası: div#infinite-data ul li h3 a[href]"""
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
     container = soup.select_one("div#infinite-data, ul.articles-list")
-    if not container:
-        return None
+    if not container: return None
     for li in container.select("li"):
-        # Tarih: "Giriş: 2026-03-31" formatı
         date_p = li.select_one("p, span, div.date")
-        if date_p and str(today) not in date_p.text and str(today.day) not in date_p.text:
-            continue
+        if date_p and str(today) not in date_p.text and str(today.day) not in date_p.text: continue
         a = li.select_one("h3 a, h2 a")
-        if not a:
-            continue
+        if not a: continue
         href = a.get("href", "")
         url = href if href.startswith("http") else f"https://www.haberturk.com{href}"
         return {"url": url, "title": a.text.strip()[:100]}
     return None
 
-
 def find_from_yeniakit(author: dict) -> Optional[dict]:
-    """Yeni Akit: section.article a[href] + time[datetime]"""
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
     for section in soup.select("section.article"):
         time_tag = section.select_one("time[datetime]")
         if time_tag:
             dt = time_tag.get("datetime", "")
-            if dt[:10] != str(today):
-                continue
+            if dt[:10] != str(today): continue
         a = section.find("a")
         h1 = section.select_one("h1.title")
-        if not a:
-            continue
+        if not a: continue
         href = a.get("href", "")
         url = href if href.startswith("http") else f"https://m.yeniakit.com.tr{href}"
         return {"url": url, "title": h1.text.strip()[:100] if h1 else author["name"]}
     return None
 
-
 def find_from_milliyet(author: dict) -> Optional[dict]:
-    """Milliyet: div.box-preview h2.box-preview__title a + span.box-preview__date"""
     r = fetch(author["scrape_url"])
-    if not r:
-        return None
+    if not r: return None
     soup = BeautifulSoup(r.text, "html.parser")
     today = datetime.now(timezone.utc).date()
-    # Türkçe ay adları
     TR_MONTHS = {
-        "Ocak": 1, "Şubat": 2, "Mart": 3, "Nisan": 4,
-        "Mayıs": 5, "Haziran": 6, "Temmuz": 7, "Ağustos": 8,
-        "Eylül": 9, "Ekim": 10, "Kasım": 11, "Aralık": 12
+        "Ocak": 1, "Şubat": 2, "Mart": 3, "Nisan": 4, "Mayıs": 5, "Haziran": 6, 
+        "Temmuz": 7, "Ağustos": 8, "Eylül": 9, "Ekim": 10, "Kasım": 11, "Aralık": 12
     }
     for box in soup.select("div.box-preview"):
         date_span = box.select_one("span.box-preview__date")
         if date_span:
             try:
-                parts = date_span.text.strip().split()  # ["31", "Mart", "2026"]
+                parts = date_span.text.strip().split()
                 if len(parts) == 3:
                     day, month_tr, year = int(parts[0]), parts[1], int(parts[2])
                     month = TR_MONTHS.get(month_tr, 0)
                     from datetime import date as date_type
-                    if date_type(year, month, day) != today:
-                        continue
+                    if date_type(year, month, day) != today: continue
             except Exception:
                 pass
         a = box.select_one("h2.box-preview__title a, a.box-preview__link")
-        if not a:
-            continue
+        if not a: continue
         href = a.get("href", "")
         url = href if href.startswith("http") else f"https://www.milliyet.com.tr{href}"
         return {"url": url, "title": a.text.strip()[:100]}
     return None
-
 
 FINDERS = {
     "rss":               find_from_rss,
@@ -463,8 +429,91 @@ FINDERS = {
     "scrape_milliyet":   find_from_milliyet,
 }
 
+def process_author(author: dict, sent_ref, favorites_ref):
+    """Tek bir yazarı işleyen, bildirim gönderen ve hata durumunda mail atan fonksiyon."""
+    log.info(f"🔍 Kontrol ediliyor: {author['name']}")
+    try:
+        finder = FINDERS.get(author["source"])
+        if not finder:
+            log.warning(f"  → Finder yok: {author['source']}")
+            return
+
+        article = finder(author)
+        if not article:
+            log.info(f"  → {author['name']}: Bugün makale yok.")
+            return
+
+        log.info(f"  → {author['name']} makale bulundu: {article['url']}")
+        article_id = url_hash(article["url"])
+
+        # Mükerrer bildirim kontrolü
+        if sent_ref.document(article_id).get().exists:
+            log.info(f"  → {author['name']}: Zaten gönderildi.")
+            return
+
+        # Firebase'den yazarı takip eden kullanıcıları (tokenları) al
+        users = favorites_ref.where("favoriteAuthorIds", "array_contains", author["id"]).stream()
+        tokens = [doc.id for doc in users]
+
+        if not tokens:
+            log.info(f"  → {author['name']}: Favorileyen kullanıcı yok.")
+            sent_ref.document(article_id).set({
+                "url": article["url"],
+                "authorId": author["id"],
+                "sentAt": firestore.SERVER_TIMESTAMP,
+            })
+            return
+
+        log.info(f"  → {author['name']}: {len(tokens)} kullanıcıya bildirim gönderiliyor...")
+        success_count = 0
+
+        # FCM limitlerine takılmamak için 500'erli batch'ler halinde gönder
+        for i in range(0, len(tokens), 500):
+            batch = tokens[i:i + 500]
+            msg = messaging.MulticastMessage(
+                tokens=batch,
+                notification=messaging.Notification(title=author["name"], body=article["title"]),
+                data={"url": article["url"]},
+                android=messaging.AndroidConfig(
+                    priority="high",
+                    notification=messaging.AndroidNotification(sound="default"),
+                ),
+                apns=messaging.APNSConfig(
+                    payload=messaging.APNSPayload(aps=messaging.Aps(sound="default")),
+                ),
+            )
+            resp = messaging.send_each_for_multicast(msg)
+            success_count += resp.success_count
+
+            # Bozuk/Kullanılmayan tokenları veri tabanından temizle
+            for idx, r in enumerate(resp.responses):
+                if not r.success:
+                    code = r.exception.code if r.exception else ""
+                    if code in (
+                        "messaging/registration-token-not-registered",
+                        "messaging/invalid-registration-token",
+                    ):
+                        favorites_ref.document(batch[idx]).delete()
+                        log.info("  → Bozuk token silindi.")
+
+        log.info(f"  → {author['name']} Başarılı: {success_count}/{len(tokens)}")
+        
+        # Gönderilen makaleyi veritabanına kaydet
+        sent_ref.document(article_id).set({
+            "url": article["url"],
+            "authorId": author["id"],
+            "authorName": author["name"],
+            "sentAt": firestore.SERVER_TIMESTAMP,
+        })
+
+    except Exception as e:
+        error_msg = str(e)
+        log.error(f"❌ {author['name']} hatası: {error_msg}")
+        # Hata durumunda fargac@gmail.com adresine mail at
+        send_error_email(author["name"], error_msg)
 
 def main():
+    # 1. Firebase başlatma ayarları
     cred_json = os.environ.get("FIREBASE_CREDENTIALS")
     if not cred_json:
         raise EnvironmentError("FIREBASE_CREDENTIALS environment variable eksik!")
@@ -472,85 +521,19 @@ def main():
     cred = credentials.Certificate(json.loads(cred_json))
     firebase_admin.initialize_app(cred)
     db = firestore.client()
+    
     sent_ref = db.collection("sentArticles")
     favorites_ref = db.collection("userFavorites")
 
-    for author in AUTHORS:
-        log.info(f"Kontrol ediliyor: {author['name']}")
-        try:
-            finder = FINDERS.get(author["source"])
-            if not finder:
-                log.warning(f"  → Finder yok: {author['source']}")
-                continue
+    # 2. Yazarları paralel olarak (ThreadPoolExecutor ile) işle
+    log.info("🚀 Paralel tarama başlatılıyor...")
+    
+    # Aynı anda 5 sitenin taranmasına izin verir, süreyi ciddi şekilde kısaltır.
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        for author in AUTHORS:
+            executor.submit(process_author, author, sent_ref, favorites_ref)
 
-            article = finder(author)
-            if not article:
-                log.info(f"  → Bugün makale yok.")
-                continue
-
-            log.info(f"  → Makale bulundu: {article['url']}")
-
-            article_id = url_hash(article["url"])
-            if sent_ref.document(article_id).get().exists:
-                log.info(f"  → Zaten gönderildi.")
-                continue
-
-            users = favorites_ref.where("favoriteAuthorIds", "array_contains", author["id"]).stream()
-            tokens = [doc.id for doc in users]
-
-            if not tokens:
-                log.info(f"  → Favorileyen kullanıcı yok.")
-                sent_ref.document(article_id).set({
-                    "url": article["url"],
-                    "authorId": author["id"],
-                    "sentAt": firestore.SERVER_TIMESTAMP,
-                })
-                continue
-
-            log.info(f"  → {len(tokens)} kullanıcıya gönderiliyor...")
-            success_count = 0
-
-            for i in range(0, len(tokens), 500):
-                batch = tokens[i:i + 500]
-                msg = messaging.MulticastMessage(
-                    tokens=batch,
-                    notification=messaging.Notification(title=author["name"], body=article["title"]),
-                    data={"url": article["url"]},
-                    android=messaging.AndroidConfig(
-                        priority="high",
-                        notification=messaging.AndroidNotification(sound="default"),
-                    ),
-                    apns=messaging.APNSConfig(
-                        payload=messaging.APNSPayload(aps=messaging.Aps(sound="default")),
-                    ),
-                )
-                resp = messaging.send_each_for_multicast(msg)
-                success_count += resp.success_count
-
-                for idx, r in enumerate(resp.responses):
-                    if not r.success:
-                        code = r.exception.code if r.exception else ""
-                        if code in (
-                            "messaging/registration-token-not-registered",
-                            "messaging/invalid-registration-token",
-                        ):
-                            favorites_ref.document(batch[idx]).delete()
-                            log.info(f"  → Bozuk token silindi.")
-
-            log.info(f"  → Başarılı: {success_count}/{len(tokens)}")
-            sent_ref.document(article_id).set({
-                "url": article["url"],
-                "authorId": author["id"],
-                "authorName": author["name"],
-                "sentAt": firestore.SERVER_TIMESTAMP,
-            })
-
-        except Exception as e:
-            log.error(f"❌ {author['name']} hatası: {e}")
-            continue
-
-    log.info("✅ Tamamlandı.")
-
+    log.info("✅ Tüm işlemler tamamlandı.")
 
 if __name__ == "__main__":
     main()
