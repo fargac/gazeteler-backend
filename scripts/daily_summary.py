@@ -2,12 +2,14 @@ import os
 import json
 import feedparser
 import firebase_admin
-from google import genai
 from firebase_admin import credentials, messaging, firestore
 from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
 
-# 1. AYARLAR VE KAYNAKLAR (Senin listen)
+# YENİ NESİL GEMINI KÜTÜPHANESİ
+from google import genai
+
+# 1. AYARLAR VE KAYNAKLAR
 SOURCES = [
     {"name": "Habertürk", "url": "https://www.haberturk.com/rss/manset.xml"},
     {"name": "Sözcü", "url": "https://www.sozcu.com.tr/feeds-son-dakika"},
@@ -17,10 +19,7 @@ SOURCES = [
     {"name": "Son Dakika", "url": "https://rss.sondakika.com/rss_standart.asp"}
 ]
 
-# 2. BAĞLANTILAR (Environment Variables)
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
-
+# 2. FIREBASE BAĞLANTISI (Environment variables ile)
 if not firebase_admin._apps:
     cred_json = os.environ.get("FIREBASE_CREDENTIALS")
     cred_dict = json.loads(cred_json)
@@ -48,7 +47,7 @@ def get_todays_news():
                 if pub_date.tzinfo is None:
                     pub_date = pub_date.replace(tzinfo=timezone.utc)
 
-                # ⚠️ KRİTİK FİLTRE: Sadece bugünün haberleri
+                # Sadece bugünün haberleri
                 if pub_date >= today_start:
                     today_news_list.append({
                         "source": source['name'],
@@ -83,19 +82,20 @@ def generate_ai_summary(news_data):
     }}
     """
     
-    # YEPYENİ SDK KULLANIMI:
-    client = genai.Client() # Şifreyi otomatik os.environ.get("GEMINI_API_KEY")'den alır
+    # YEPYENİ SDK KULLANIMI VE GEMINI 2.0 FLASH
+    # API key'i GitHub Actions'dan garantili şekilde alıyoruz
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY")) 
     response = client.models.generate_content(
-        model='gemini-2.0-flash', # En yeni ve güncel model
+        model='gemini-2.0-flash', 
         contents=prompt
     )
     
-    # JSON temizleme
+    # JSON temizleme (Markdown taglarını kaldırır)
     clean_response = response.text.replace('```json', '').replace('```', '').strip()
     return json.loads(clean_response)
 
 def send_to_firebase(summary_data):
-    # 1. ADIM: Bildirimi Fırlat (Kullanıcıyı çekmek için)
+    # 1. ADIM: Bildirimi Fırlat
     message = messaging.Message(
         notification=messaging.Notification(
             title=summary_data['push_title'],
@@ -106,8 +106,7 @@ def send_to_firebase(summary_data):
     messaging.send(message)
     print("🚀 Bildirim başarıyla fırlatıldı!")
 
-    # 2. ADIM: Uygulama İçi Vitrin İçin Firestore'a Kaydet (Hibrit Model)
-    # 'daily_summaries' koleksiyonuna bugünün tarihiyle kaydet
+    # 2. ADIM: Uygulama İçi Vitrin İçin Firestore'a Kaydet
     doc_id = datetime.now().strftime("%Y-%m-%d")
     db.collection("daily_summaries").document(doc_id).set({
         "items": summary_data['detailed_summary'],
@@ -120,7 +119,11 @@ def send_to_firebase(summary_data):
 if __name__ == "__main__":
     raw_news = get_todays_news()
     if len(raw_news) > 5:
-        summary = generate_ai_summary(raw_news)
-        send_to_firebase(summary)
+        try:
+            summary = generate_ai_summary(raw_news)
+            send_to_firebase(summary)
+            print("✅ TÜM İŞLEMLER BAŞARIYLA TAMAMLANDI!")
+        except Exception as e:
+            print(f"❌ Yapay Zeka veya Firebase aşamasında kritik hata: {e}")
     else:
         print("⚠️ Yeterli yeni haber bulunamadı, işlem iptal edildi.")
