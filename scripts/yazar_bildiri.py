@@ -9,6 +9,9 @@ import hashlib
 import logging
 import smtplib
 import time
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from email.mime.text import MIMEText
 from datetime import datetime, timezone, timedelta
 from typing import Optional
@@ -74,6 +77,20 @@ AUTHORS = [
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 }
+secure_session = requests.Session()
+secure_session.headers.update(HEADERS)
+
+# Toplam 3 kere dene. Eğer hata 429 (Too Many Requests) veya 5xx ise 1, 2, 4 saniye şeklinde bekleyerek dene.
+retries = Retry(
+    total=3,
+    backoff_factor=1,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["HEAD", "GET", "OPTIONS"]
+)
+# max_workers=10 olduğu için pool limitlerini 10'un üzerinde tutuyoruz
+adapter = HTTPAdapter(max_retries=retries, pool_connections=15, pool_maxsize=15)
+secure_session.mount("http://", adapter)
+secure_session.mount("https://", adapter)
 
 def send_error_email(author_name: str, error_message: str):
     msg_user = os.environ.get("EMAIL_USER")
@@ -99,19 +116,21 @@ def send_error_email(author_name: str, error_message: str):
     except Exception as e:
         log.error(f"❌ E-posta gönderme başarısız: {e}")
 
-def fetch(url: str, timeout: int = 15, retries: int = 3) -> Optional[requests.Response]:
+def fetch(url: str, timeout: int = 15) -> Optional[requests.Response]:
+    # Eğer aynı çalışma içinde daha önce çekildiyse cache'den ver
     if url in FETCH_CACHE:
         return FETCH_CACHE[url]
 
-    for i in range(retries):
-        try:
-            r = requests.get(url, headers=HEADERS, timeout=timeout)
-            r.raise_for_status()
-            FETCH_CACHE[url] = r
-            return r
-        except requests.exceptions.RequestException as e:
-            log.warning(f"⚠️ Retry {i+1}/{retries} [{url}] Hata: {e}")
-            time.sleep(2)
+    try:
+        # requests.get yerine secure_session.get kullanıyoruz.
+        # Retry ve bekleme (sleep) işlemlerini kütüphane otomatik ve akıllıca yapacak.
+        r = secure_session.get(url, timeout=timeout)
+        r.raise_for_status()
+        FETCH_CACHE[url] = r
+        return r
+    except requests.exceptions.RequestException as e:
+        # Retry limitleri aşılırsa veya sunucu tamamen kapanmışsa buraya düşer
+        raise ConnectionError(f"URL'ye ulaşılamadı veya IP engellendi: {url} | Hata detay: {e}")
             
     raise ConnectionError(f"URL'ye ulaşılamadı (Max retries aşıldı): {url}")
 
