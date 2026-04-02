@@ -103,7 +103,7 @@ KESFET_CONFIG = {
         {"id": "al_jazeera", "name": "Al Jazeera", "link": "https://www.aljazeera.com/"}
     ],
     "yazarlar": [
-    {"id": "abdurrahman_dilipak", "name": "Abdurrahman Dilipak", "link": "https://www.habervakti.com/abdurrahman-dilipak"},
+    {"id": "abdurrahman_dilipak", "name": "Abdurrahman Dilli", "link": "https://www.habervakti.com/abdurrahman-dilipak"},
     {"id": "abdulkadir_selvi", "name": "Abdülkadir Selvi", "link": "https://m.hurriyet.com.tr/yazarlar/abdulkadir-selvi/"},
     {"id": "ahmet_cakar", "name": "Ahmet Çakar", "link": "https://m.sabah.com.tr/yazarlar/cakar/arsiv?getall=true"},
     {"id": "ahmet_hakan", "name": "Ahmet Hakan", "link": "https://m.hurriyet.com.tr/yazarlar/ahmet-hakan/"},
