@@ -6,6 +6,7 @@ import firebase_admin
 from firebase_admin import credentials, messaging, firestore
 from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
+
 from google import genai
 
 SOURCES = [
@@ -69,7 +70,14 @@ def generate_ai_summary(news_data):
     {{
         "push_title": "📅 Günün Özeti: Neler Oldu?",
         "push_body": "En önemli 3 maddeyi buraya kısa (max 120 karakter) yaz...",
-        "detailed_summary": ["Madde 1", "Madde 2", "Madde 3", "Madde 4", "Madde 5", "Madde 6"],
+        "detailed_summary": [
+            {{"title": "Madde 1 Kısa Başlık", "desc": "Madde 1'in detaylı açıklaması"}},
+            {{"title": "Madde 2 Kısa Başlık", "desc": "Madde 2'in detaylı açıklaması"}},
+            {{"title": "Madde 3 Kısa Başlık", "desc": "Madde 3'in detaylı açıklaması"}},
+            {{"title": "Madde 4 Kısa Başlık", "desc": "Madde 4'in detaylı açıklaması"}},
+            {{"title": "Madde 5 Kısa Başlık", "desc": "Madde 5'in detaylı açıklaması"}},
+            {{"title": "Madde 6 Kısa Başlık", "desc": "Madde 6'in detaylı açıklaması"}}
+        ],
         "sources_used": "Kaynak 1 • Kaynak 2 • Kaynak 3"
     }}
     """  
@@ -93,7 +101,10 @@ def generate_ai_summary(news_data):
         raise ValueError(f"Gemini geçersiz JSON döndürdü: {e}\nYanıt: {response.text[:200]}")
 
 def send_to_firebase(summary_data):
-    doc_id = datetime.now().strftime("%Y-%m-%d")
+    # DÜZELTME: Türkiye saati (UTC+3) ile döküman ID'si oluşturuluyor
+    tr_tz = timezone(timedelta(hours=3))
+    now_tr = datetime.now(tr_tz)
+    doc_id = now_tr.strftime("%Y-%m-%d")
 
     message = messaging.Message(
         notification=messaging.Notification(
@@ -104,7 +115,7 @@ def send_to_firebase(summary_data):
             "type": "daily_summary",
             "date": doc_id
         },
-        topic="daily_summary" # BUG DÜZELTİLDİ: all_users yerine daily_summary
+        topic="daily_summary" 
     )
     messaging.send(message)
     print("🚀 Bildirim başarıyla fırlatıldı!")

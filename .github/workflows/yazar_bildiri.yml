@@ -2,8 +2,8 @@ name: Yazar Bildirimleri
 
 on:
   schedule:
-     - cron: '0 4 * * *'   # 07:00 Türkiye
-     - cron: '0 5 * * *'   # 08:00 Türkiye
+     # Her 3 saatte bir kontrol eder
+     - cron: '0 */3 * * *'
   workflow_dispatch:
 
 jobs:
