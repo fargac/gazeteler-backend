@@ -1,10 +1,8 @@
-# scripts/build_cdn.py
 import json
 import hashlib
 import os
 import sys
 
-# Üst klasördeki modüllere erişmek için path ayarı
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from data.haber_kaynaklari import NEWS_SOURCES
@@ -23,17 +21,15 @@ def build_static_files():
         "appGeneralConfig": APP_GENERAL_CONFIG
     }
     
-    # MD5 Versiyon Hash'i oluştur
+    # 🔥 BEST PRACTICE: MD5 yerine SHA-256
     config_str = json.dumps(data, sort_keys=True)
-    version_hash = hashlib.md5(config_str.encode()).hexdigest()
+    version_hash = hashlib.sha256(config_str.encode()).hexdigest()[:32] # MD5 gibi 32 karakter
     
-    # Dosyaların kaydedileceği klasör
     output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cdn_data')
     os.makedirs(output_dir, exist_ok=True)
     
-    # JSON dosyalarını oluştur
     with open(os.path.join(output_dir, 'config.json'), 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, separators=(',', ':')) # Küçültülmüş boyut için separators eklendi
+        json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
         
     with open(os.path.join(output_dir, 'version.json'), 'w', encoding='utf-8') as f:
         json.dump({"version": version_hash}, f, ensure_ascii=False)
