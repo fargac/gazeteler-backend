@@ -2,9 +2,11 @@ name: Gezo Gündem Günün Özeti Otomasyonu
 
 on:
   schedule:
-    # Türkiye saatiyle 21:00'da çalışması için UTC saati (18:00) ayarlandı.
-    - cron: '0 18 * * *'
+    - cron: '0 18 * * *' # Türkiye saati ile 21:00
   workflow_dispatch:
+
+permissions:
+  contents: write # 🔥 YENİ: Commit atabilmek için izin gerekli
 
 jobs:
   run-summary:
@@ -19,11 +21,16 @@ jobs:
           python-version: '3.11'
 
       - name: Kütüphaneleri Yükle
-        run: |
-          pip install firebase-admin google-genai feedparser python-dateutil
+        run: pip install firebase-admin google-genai feedparser python-dateutil
 
-      - name: Günün Özetini Hazırla ve Gönder
+      - name: Günün Özetini Hazırla ve Diske Yaz
         env:
           FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python scripts/daily_summary.py
+
+      - name: Yeni Özeti Github'a Pushla (CDN için)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "📝 feat(cdn): Günün Özeti eklendi"
+          file_pattern: 'cdn_data/summaries/*.json'

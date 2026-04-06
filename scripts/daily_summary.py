@@ -6,7 +6,6 @@ import firebase_admin
 from firebase_admin import credentials, messaging, firestore
 from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
-
 from google import genai
 
 SOURCES = [
@@ -21,8 +20,7 @@ SOURCES = [
 if not firebase_admin._apps:
     cred_json = os.environ.get("FIREBASE_CREDENTIALS")
     cred_dict = json.loads(cred_json)
-    cred = credentials.Certificate(cred_dict)
-    firebase_admin.initialize_app(cred)
+    firebase_admin.initialize_app(credentials.Certificate(cred_dict))
 
 db = firestore.client()
 
@@ -37,19 +35,13 @@ def get_todays_news():
     for source in SOURCES:
         try:
             feed = feedparser.parse(source['url'])
-            count = 0
             for entry in feed.entries:
                 pub_date = date_parser.parse(entry.get('published', entry.get('pubDate', '')))
                 if pub_date.tzinfo is None:
                     pub_date = pub_date.replace(tzinfo=timezone.utc)
 
                 if pub_date >= today_start:
-                    today_news_list.append({
-                        "source": source['name'],
-                        "title": entry.title
-                    })
-                    count += 1
-            print(f"✅ {source['name']}: {count} yeni haber alındı.")
+                    today_news_list.append({"source": source['name'], "title": entry.title})
         except Exception as e:
             print(f"❌ {source['name']} okunurken hata: {e}")
     
@@ -58,63 +50,50 @@ def get_todays_news():
 def generate_ai_summary(news_data):
     news_text = "\n".join([f"- [{n['source']}] {n['title']}" for n in news_data])
     prompt = f"""
-    Sen Gezo Gündem uygulamasının baş editörüsün. Aşağıda sana Türkiye'nin en büyük 6 kaynağından gelen son 24 saatin haber başlıklarını sunuyorum:
-    
+    Sen Gezo Gündem uygulamasının baş editörüsün. Türkiye'nin en büyük 6 kaynağından son 24 saatin haberleri:
     {news_text}
-    
-    GÖREVİN:
-    1. Bu haberleri analiz et. Eski, etkisini yitirmiş veya dünden kalan önemsiz haberleri tamamen ELE.
-    2. Sadece BUGÜNÜN gündemine damga vuran, hala güncelliğini ve sıcaklığını koruyan en hayati 6 maddeyi seç. Aynı konudaki haberleri tek maddede birleştir.
-    3. Şeffaflık gereği, bu özeti hazırlarken yararlandığın TÜM kaynakların adını metnin en sonunda belirt.
-    4. Yanıtı SADECE aşağıdaki JSON formatında ver, başka açıklama yazma:
+    GÖREVİN: BUGÜNÜN gündemine damga vuran en hayati 6 maddeyi seç. Yanıtı SADECE aşağıdaki JSON formatında ver:
     {{
         "push_title": "📅 Günün Özeti: Neler Oldu?",
-        "push_body": "En önemli 3 maddeyi buraya kısa (max 120 karakter) yaz...",
+        "push_body": "Kısa özet...",
         "detailed_summary": [
-            {{"title": "Madde 1 Kısa Başlık", "desc": "Madde 1'in detaylı açıklaması"}},
-            {{"title": "Madde 2 Kısa Başlık", "desc": "Madde 2'in detaylı açıklaması"}},
-            {{"title": "Madde 3 Kısa Başlık", "desc": "Madde 3'in detaylı açıklaması"}},
-            {{"title": "Madde 4 Kısa Başlık", "desc": "Madde 4'in detaylı açıklaması"}},
-            {{"title": "Madde 5 Kısa Başlık", "desc": "Madde 5'in detaylı açıklaması"}},
-            {{"title": "Madde 6 Kısa Başlık", "desc": "Madde 6'in detaylı açıklaması"}}
+            {{"title": "Madde 1 Kısa Başlık", "desc": "Detay"}},
+            {{"title": "Madde 2 Kısa Başlık", "desc": "Detay"}}
         ],
-        "sources_used": "Kaynak 1 • Kaynak 2 • Kaynak 3"
+        "sources_used": "Kaynak 1 • Kaynak 2"
     }}
     """  
     
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    if not gemini_key:
-        raise EnvironmentError("GEMINI_API_KEY eksik!")
-    
-    client = genai.Client(api_key=gemini_key)
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
     response = client.models.generate_content(
         model='gemini-2.5-flash', 
         contents=prompt,
-        config=genai.types.GenerateContentConfig(
-            response_mime_type="application/json",
-        )
+        config=genai.types.GenerateContentConfig(response_mime_type="application/json")
     )
+    return json.loads(response.text)
+
+def save_to_cdn(summary_data, doc_id):
+    # 🔥 YENİ: Veriyi CDN için JSON dosyası olarak diske yazıyoruz
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cdn_data', 'summaries')
+    os.makedirs(output_dir, exist_ok=True)
     
-    try:
-        return json.loads(response.text)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Gemini geçersiz JSON döndürdü: {e}\nYanıt: {response.text[:200]}")
+    file_path = os.path.join(output_dir, f"{doc_id}.json")
+    
+    cdn_payload = {
+        "date": doc_id,
+        "items": summary_data['detailed_summary'],
+        "sources": summary_data['sources_used']
+    }
+    
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(cdn_payload, f, ensure_ascii=False, separators=(',', ':'))
+        
+    print(f"📦 CDN dosyası oluşturuldu: {file_path}")
 
-def send_to_firebase(summary_data):
-    # DÜZELTME: Türkiye saati (UTC+3) ile döküman ID'si oluşturuluyor
-    tr_tz = timezone(timedelta(hours=3))
-    now_tr = datetime.now(tr_tz)
-    doc_id = now_tr.strftime("%Y-%m-%d")
-
+def send_to_firebase(summary_data, doc_id):
     message = messaging.Message(
-        notification=messaging.Notification(
-            title=summary_data['push_title'],
-            body=summary_data['push_body']
-        ),
-        data={
-            "type": "daily_summary",
-            "date": doc_id
-        },
+        notification=messaging.Notification(title=summary_data['push_title'], body=summary_data['push_body']),
+        data={"type": "daily_summary", "date": doc_id},
         topic="daily_summary" 
     )
     messaging.send(message)
@@ -125,31 +104,20 @@ def send_to_firebase(summary_data):
         "sources": summary_data['sources_used'],
         "created_at": firestore.SERVER_TIMESTAMP
     })
-    print("💾 Uygulama içi özet Firestore'a kaydedildi!")
+    print("💾 Yedek olarak Firestore'a kaydedildi!")
 
 if __name__ == "__main__":
     raw_news = get_todays_news()
     if len(raw_news) > 5:
-        max_deneme = 4
+        tr_tz = timezone(timedelta(hours=3))
+        doc_id = datetime.now(tr_tz).strftime("%Y-%m-%d")
         
-        for deneme in range(max_deneme):
+        for deneme in range(4):
             try:
                 summary = generate_ai_summary(raw_news)
-                send_to_firebase(summary)
-                print("✅ TÜM İŞLEMLER BAŞARIYLA TAMAMLANDI!")
+                save_to_cdn(summary, doc_id) # Önce diske yaz
+                send_to_firebase(summary, doc_id) # Sonra bildirimi at
+                print("✅ TÜM İŞLEMLER BAŞARILI!")
                 break
-                
             except Exception as e:
-                hata_mesaji = str(e)
-                if "503" in hata_mesaji or "429" in hata_mesaji or "UNAVAILABLE" in hata_mesaji:
-                    bekleme_suresi = 15 * (deneme + 1)
-                    print(f"⚠️ Gemini API şu an yoğun (Deneme {deneme + 1}/{max_deneme}). {bekleme_suresi} saniye bekleniyor...")
-                    time.sleep(bekleme_suresi)
-                else:
-                    print(f"❌ Yapay Zeka veya Firebase aşamasında kritik hata: {e}")
-                    break
-        else:
-            print("❌ Sunucular ısrarla yanıt vermedi, maksimum deneme sınırına ulaşıldı.")
-            
-    else:
-        print("⚠️ Yeterli yeni haber bulunamadı, işlem iptal edildi.")
+                time.sleep(15 * (deneme + 1))
