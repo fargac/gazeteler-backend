@@ -77,7 +77,12 @@ AUTHORS = [
 ]
 
 # --- AĞ VE OTURUM YAPILANDIRMASI ---
-HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Upgrade-Insecure-Requests": "1"
+}
 
 secure_session = requests.Session()
 secure_session.headers.update(HEADERS)
@@ -226,11 +231,23 @@ def find_from_altayli(author: dict) -> Optional[dict]:
     if not soup: return None
     today_str = datetime.now(TR_TZ).date().strftime("%Y-%m-%d")
 
-    for a in soup.select("a.blog-item"):
+    # 🔥 BEST PRACTICE: Class'a güvenme. İçinde bugünün tarihi geçen HERHANGİ bir linki ara.
+    for a in soup.select("a[href]"):
         href = a.get("href", "")
-        if today_str not in href:
-            continue
-        return {KEY_URL: build_url(href, "https://fatihaltayli.com.tr"), KEY_TITLE: (a.get("title") or a.get_text(strip=True))[:100]}
+        
+        # Linkin içinde hem bugünün tarihi (örn: 2026-04-06) hem de 'fatih-altayli' geçiyorsa kesin o yazıdır!
+        if today_str in href and "fatih-altayli" in href:
+            # Başlığı alırken HTML etiketlerinden ayırarak temizliyoruz
+            title = a.get("title") or a.get_text(separator=" ", strip=True)
+            
+            if not title or len(title) < 5:
+                continue
+                
+            return {
+                KEY_URL: build_url(href, "https://fatihaltayli.com.tr"), 
+                KEY_TITLE: title[:100]
+            }
+            
     return None
 
 
