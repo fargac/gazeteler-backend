@@ -10,11 +10,11 @@ from google import genai
 
 SOURCES = [
     {"name": "Habertürk", "url": "https://www.haberturk.com/rss/manset.xml"},
-    {"name": "Sözcü", "url": "https://www.sozcu.com.tr/feeds-son-dakika"},
-    {"name": "Hürriyet", "url": "https://www.hurriyet.com.tr/rss/anasayfa"},
-    {"name": "Ekonomim", "url": "https://www.ekonomim.com/rss"},
-    {"name": "NTV Spor", "url": "https://www.ntvspor.net/rss/anasayfa"},
-    {"name": "Son Dakika", "url": "https://rss.sondakika.com/rss_standart.asp"}
+    {"name": "Sözcü",     "url": "https://www.sozcu.com.tr/feeds-son-dakika"},
+    {"name": "Hürriyet",  "url": "https://www.hurriyet.com.tr/rss/anasayfa"},
+    {"name": "Ekonomim",  "url": "https://www.ekonomim.com/rss"},
+    {"name": "NTV Spor",  "url": "https://www.ntvspor.net/rss/anasayfa"},
+    {"name": "Son Dakika","url": "https://rss.sondakika.com/rss_standart.asp"}
 ]
 
 if not firebase_admin._apps:
@@ -23,6 +23,7 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(credentials.Certificate(cred_dict))
 
 db = firestore.client()
+
 
 def get_todays_news():
     today_news_list = []
@@ -44,8 +45,9 @@ def get_todays_news():
                     today_news_list.append({"source": source['name'], "title": entry.title})
         except Exception as e:
             print(f"❌ {source['name']} okunurken hata: {e}")
-    
+
     return today_news_list
+
 
 def generate_ai_summary(news_data):
     news_text = "\n".join([f"- [{n['source']}] {n['title']}" for n in news_data])
@@ -62,39 +64,46 @@ def generate_ai_summary(news_data):
         ],
         "sources_used": "Kaynak 1 • Kaynak 2"
     }}
-    """  
-    
+    """
+
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
     response = client.models.generate_content(
-        model='gemini-2.5-flash', 
+        model='gemini-2.5-flash',
         contents=prompt,
         config=genai.types.GenerateContentConfig(response_mime_type="application/json")
     )
     return json.loads(response.text)
 
+
 def save_to_cdn(summary_data, doc_id):
-    # 🔥 YENİ: Veriyi CDN için JSON dosyası olarak diske yazıyoruz
-    output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cdn_data', 'summaries')
+    output_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'cdn_data', 'summaries'
+    )
     os.makedirs(output_dir, exist_ok=True)
-    
+
     file_path = os.path.join(output_dir, f"{doc_id}.json")
-    
+
     cdn_payload = {
         "date": doc_id,
         "items": summary_data['detailed_summary'],
         "sources": summary_data['sources_used']
     }
-    
+
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(cdn_payload, f, ensure_ascii=False, separators=(',', ':'))
-        
+
     print(f"📦 CDN dosyası oluşturuldu: {file_path}")
+
 
 def send_to_firebase(summary_data, doc_id):
     message = messaging.Message(
-        notification=messaging.Notification(title=summary_data['push_title'], body=summary_data['push_body']),
+        notification=messaging.Notification(
+            title=summary_data['push_title'],
+            body=summary_data['push_body']
+        ),
         data={"type": "daily_summary", "date": doc_id},
-        topic="daily_summary" 
+        topic="daily_summary"
     )
     messaging.send(message)
     print("🚀 Bildirim başarıyla fırlatıldı!")
@@ -106,18 +115,44 @@ def send_to_firebase(summary_data, doc_id):
     })
     print("💾 Yedek olarak Firestore'a kaydedildi!")
 
+
 if __name__ == "__main__":
     raw_news = get_todays_news()
-    if len(raw_news) > 5:
-        tr_tz = timezone(timedelta(hours=3))
-        doc_id = datetime.now(tr_tz).strftime("%Y-%m-%d")
-        
-        for deneme in range(4):
-            try:
-                summary = generate_ai_summary(raw_news)
-                save_to_cdn(summary, doc_id) # Önce diske yaz
-                send_to_firebase(summary, doc_id) # Sonra bildirimi at
-                print("✅ TÜM İŞLEMLER BAŞARILI!")
-                break
-            except Exception as e:
-                time.sleep(15 * (deneme + 1))
+
+    if len(raw_news) <= 5:
+        print("⚠️ Yeterli haber bulunamadı, işlem durduruldu.")
+        exit(0)
+
+    tr_tz = timezone(timedelta(hours=3))
+    doc_id = datetime.now(tr_tz).strftime("%Y-%m-%d")
+
+    last_error = None
+
+    for deneme in range(4):
+        try:
+            print(f"🔄 Deneme {deneme + 1}/4...")
+            summary = generate_ai_summary(raw_news)
+
+            # 🔥 FIX: save_to_cdn ve send_to_firebase aynı try bloğunda.
+            # İkisi de başarılı olursa break, biri başarısız olursa
+            # CDN'e yazılmış ama bildirim gitmemiş durumu oluşmaz.
+            save_to_cdn(summary, doc_id)
+            send_to_firebase(summary, doc_id)
+
+            print("✅ TÜM İŞLEMLER BAŞARILI!")
+            break  # İkisi de başarılıysa döngüden çık
+
+        except Exception as e:
+            last_error = e
+            print(f"❌ Deneme {deneme + 1} başarısız: {e}")
+
+            # Son denemeyse tekrar bekleme, direkt çık
+            if deneme < 3:
+                wait_seconds = 15 * (deneme + 1)
+                print(f"⏳ {wait_seconds} saniye bekleniyor...")
+                time.sleep(wait_seconds)
+    else:
+        # 🔥 FIX: for/else — döngü break olmadan biterse burası çalışır.
+        # Yani 4 denemenin tümü başarısız oldu demektir.
+        print(f"🚨 4 denemenin tamamı başarısız oldu! Son hata: {last_error}")
+        exit(1)  # GitHub Actions'a hata sinyali gönder (workflow kırmızıya döner)
