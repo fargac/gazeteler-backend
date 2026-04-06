@@ -1,6 +1,7 @@
 """
-Yazar Bildirim Sistemi v4.1 (Thread-Safe Cache Edition)
-- FETCH_CACHE threading.Lock ile korundu (race condition fix)
+Yazar Bildirim Sistemi v5.0 (Gerçek Thread-Safe & LXML Edition)
+- thundering herd problemi Event'ler ile çözüldü.
+- lxml entegrasyonu ile CPU darboğazı giderildi.
 """
 
 import os
@@ -10,7 +11,7 @@ import logging
 import smtplib
 import threading
 from email.mime.text import MIMEText
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date as date_type
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 
@@ -29,8 +30,9 @@ log = logging.getLogger(__name__)
 TR_TZ = timezone(timedelta(hours=3))
 TARGET_EMAIL = "fargac@gmail.com"
 
-# 🔥 FIX: Lock ile korunan thread-safe cache
-FETCH_CACHE: dict = {}
+# 🔥 GERÇEK THREAD-SAFE CACHE YÖNETİMİ
+FETCH_EVENTS: dict = {}
+FETCH_RESULTS: dict = {}
 _cache_lock = threading.Lock()
 
 KEY_ID, KEY_NAME, KEY_SOURCE, KEY_SCRAPE_URL, KEY_URL, KEY_TITLE = "id", "name", "source", "scrape_url", "url", "title"
@@ -90,28 +92,40 @@ secure_session.mount("https://", HTTPAdapter(max_retries=retry_strategy, pool_co
 def get_soup(url: str, is_xml: bool = False) -> BeautifulSoup:
     """
     URL'yi çeker ve parse edilmiş Soup objesini döner.
-
-    🔥 FIX v4.1: Double-checked locking pattern ile thread-safe hale getirildi.
-    10 thread aynı anda aynı URL'e istek atsa bile:
-      - Sadece biri fetch yapar, diğerleri cache'den okur.
-      - dict bozulması (race condition) imkansız hale geldi.
+    Event/Kilit mekanizması ile tam Thread-Safe (Kurumsal Seviye).
     """
-    # 1. Önce lock olmadan hızlı kontrol (çoğu zaman cache dolu olacak)
     with _cache_lock:
-        if url in FETCH_CACHE:
-            return FETCH_CACHE[url]
+        # Eğer sonuç zaten varsa dön
+        if url in FETCH_RESULTS:
+            return FETCH_RESULTS[url]
 
-    # 2. Cache'de yoksa, lock DIŞINDA fetch yap (ağ isteği uzun sürer,
-    #    bu süre boyunca diğer thread'leri bloke etmek istemiyoruz)
-    r = secure_session.get(url, timeout=15)
-    r.raise_for_status()
-    soup = BeautifulSoup(r.content if is_xml else r.text, "xml" if is_xml else "html.parser")
+        # Sonuç yoksa ve kimse şu an çekmiyorsa, Event oluştur ve görevi sen al
+        if url not in FETCH_EVENTS:
+            FETCH_EVENTS[url] = threading.Event()
+            needs_fetch = True
+        else:
+            needs_fetch = False
 
-    # 3. Sonucu lock içinde yaz (başka thread aynı anda yazmaya çalışsa bile güvenli)
-    with _cache_lock:
-        FETCH_CACHE[url] = soup
+    if needs_fetch:
+        try:
+            r = secure_session.get(url, timeout=15)
+            r.raise_for_status()
+            
+            # 🔥 PERFORMANS: lxml parser, html.parser'a göre 5-10 kat daha hızlıdır
+            parser_type = "xml" if is_xml else "lxml"
+            soup = BeautifulSoup(r.content if is_xml else r.text, parser_type)
+            
+            with _cache_lock:
+                FETCH_RESULTS[url] = soup
+        finally:
+            # İşlem bittiğinde (başarılı/hata) bekleyen diğer thread'leri serbest bırak
+            with _cache_lock:
+                FETCH_EVENTS[url].set()
+    else:
+        # Başka bir thread çekiyor, onun bitirmesini bekle
+        FETCH_EVENTS[url].wait()
 
-    return soup
+    return FETCH_RESULTS.get(url)
 
 
 def build_url(href: str, base_domain: str) -> str:
@@ -147,6 +161,7 @@ def send_error_email(author_name: str, error_message: str):
 
 def find_from_rss(author: dict) -> Optional[dict]:
     soup = get_soup(author["rss"], is_xml=True)
+    if not soup: return None
     today = datetime.now(TR_TZ).date()
 
     for item in soup.find_all("item"):
@@ -174,6 +189,7 @@ def find_from_rss(author: dict) -> Optional[dict]:
 
 def find_from_hurriyet(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     for box in soup.select("a.author-box"):
         name_tag = box.select_one("span.name")
         if not name_tag or author[KEY_NAME].lower() not in name_tag.text.lower():
@@ -190,6 +206,7 @@ def find_from_hurriyet(author: dict) -> Optional[dict]:
 
 def find_from_sabah(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     for li in soup.select("div.manset.writer ul li"):
         name_tag = li.select_one("strong:not(.sub)")
         if not name_tag or author[KEY_NAME].lower() not in name_tag.text.lower():
@@ -206,6 +223,7 @@ def find_from_sabah(author: dict) -> Optional[dict]:
 
 def find_from_altayli(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today_str = datetime.now(TR_TZ).date().strftime("%Y-%m-%d")
 
     for a in soup.select("a.blog-item"):
@@ -218,6 +236,7 @@ def find_from_altayli(author: dict) -> Optional[dict]:
 
 def find_from_10haber(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     a = soup.select_one("article a, .post a, h2 a")
     if not a:
         return None
@@ -226,6 +245,7 @@ def find_from_10haber(author: dict) -> Optional[dict]:
 
 def find_from_karar(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today_str = str(datetime.now(TR_TZ).date())
 
     for article in soup.select("section.author-article article.item, article.item.box-shadow"):
@@ -244,6 +264,7 @@ def find_from_karar(author: dict) -> Optional[dict]:
 
 def find_from_t24(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today_day_str = str(datetime.now(TR_TZ).date().day)
 
     for a in soup.select("section.aramakartalanimobil a[href]"):
@@ -258,6 +279,7 @@ def find_from_t24(author: dict) -> Optional[dict]:
 
 def find_from_cumhuriyet(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today = datetime.now(TR_TZ).date()
     today_str, today_day_str = str(today), str(today.day)
 
@@ -278,6 +300,7 @@ def find_from_cumhuriyet(author: dict) -> Optional[dict]:
 
 def find_from_mahfi(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today_year_str = str(datetime.now(TR_TZ).date().year)
 
     for article in soup.select("article.post"):
@@ -295,6 +318,7 @@ def find_from_mahfi(author: dict) -> Optional[dict]:
 
 def find_from_fotomac(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today_day_str = str(datetime.now(TR_TZ).date().day)
 
     for item in soup.select("div.archive-item"):
@@ -312,6 +336,7 @@ def find_from_fotomac(author: dict) -> Optional[dict]:
 
 def find_from_star(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today_day_str = str(datetime.now(TR_TZ).date().day)
 
     for li in soup.select("ul.main li"):
@@ -329,6 +354,7 @@ def find_from_star(author: dict) -> Optional[dict]:
 
 def find_from_nefes(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today_day_str = str(datetime.now(TR_TZ).date().day)
 
     for article in soup.select("section.author-posts article.article-card"):
@@ -346,6 +372,7 @@ def find_from_nefes(author: dict) -> Optional[dict]:
 
 def find_from_habervakti(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today_day_str = str(datetime.now(TR_TZ).date().day)
 
     for card in soup.select("div.card"):
@@ -363,6 +390,7 @@ def find_from_habervakti(author: dict) -> Optional[dict]:
 
 def find_from_nihal(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today = datetime.now(TR_TZ).date()
     today_str, today_day_str = str(today), str(today.day)
 
@@ -381,6 +409,7 @@ def find_from_nihal(author: dict) -> Optional[dict]:
 
 def find_from_yeniakit(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today_str = str(datetime.now(TR_TZ).date())
 
     for section in soup.select("section.article"):
@@ -398,6 +427,7 @@ def find_from_yeniakit(author: dict) -> Optional[dict]:
 
 def find_from_milliyet(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
+    if not soup: return None
     today = datetime.now(TR_TZ).date()
     TR_MONTHS = {"Ocak": 1, "Şubat": 2, "Mart": 3, "Nisan": 4, "Mayıs": 5, "Haziran": 6, "Temmuz": 7, "Ağustos": 8, "Eylül": 9, "Ekim": 10, "Kasım": 11, "Aralık": 12}
 
@@ -407,7 +437,6 @@ def find_from_milliyet(author: dict) -> Optional[dict]:
             try:
                 parts = date_span.text.strip().split()
                 if len(parts) == 3:
-                    from datetime import date as date_type
                     if date_type(int(parts[2]), TR_MONTHS.get(parts[1], 0), int(parts[0])) != today:
                         continue
             except (ValueError, TypeError, IndexError):
@@ -503,6 +532,8 @@ def main():
 
     log.info("🚀 Enterprise Tarama başlatılıyor... (max_workers=10)")
 
+    # Threading işlemi bittikten sonra açık portları temizlemek için 
+    # session işlemlerini sarmalıyoruz.
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(process_author, author, sent_ref) for author in AUTHORS]
         for f in futures:
@@ -510,6 +541,9 @@ def main():
                 f.result()
             except Exception as e:
                 log.error(f"Kritik Thread Hatası: {e}")
+                
+    # Memory Leak Önlemi: Dangling (Askıda kalmış) socketleri temizle
+    secure_session.close()
 
     log.info("✅ Tüm işlemler güvenle tamamlandı.")
 
