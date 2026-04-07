@@ -52,13 +52,13 @@ AUTHORS = [
     # ── Diğer Siteler (Scrape) ───────────────────────────────────────────────
     {KEY_ID: "ahmet_hakan",      KEY_NAME: "Ahmet Hakan",      KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/ahmet-hakan/"},
     {KEY_ID: "abdulkadir_selvi", KEY_NAME: "Abdülkadir Selvi", KEY_SOURCE: "scrape_hurriyet", KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/abdulkadir-selvi/"},
-    {KEY_ID: "osman_muftuoglu",  KEY_NAME: "Osman Müftüoğlu",  KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/osman-muftuoglu/"},
     {KEY_ID: "fatih_cekirge",    KEY_NAME: "Fatih Çekirge",    KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/fatih-cekirge/"},
     {KEY_ID: "nedim_sener",      KEY_NAME: "Nedim Şener",      KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/nedim-sener/"},
     {KEY_ID: "ahmet_cakar",      KEY_NAME: "Ahmet Çakar",      KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/cakar/arsiv/getall"},
     {KEY_ID: "gurcan_bilgic",    KEY_NAME: "Gürcan Bilgiç",    KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/bilgic/arsiv/getall"},
     {KEY_ID: "levent_tuzemen",   KEY_NAME: "Levent Tüzemen",   KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/levent_tuzemen/arsiv/getall"},
     {KEY_ID: "salih_tuna",       KEY_NAME: "Salih Tuna",       KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/salih-tuna/arsiv/getall"},
+    {KEY_ID: "osman_muftuoglu",  KEY_NAME: "Osman Müftüoğlu",  KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/osman-muftuoglu/arsiv/getall"},
     {KEY_ID: "fatih_altayli",    KEY_NAME: "Fatih Altaylı",    KEY_SOURCE: "scrape_altayli", KEY_SCRAPE_URL: "https://fatihaltayli.com.tr/yazilar/fatih-altayli/kose-yazilari"},
     {KEY_ID: "ertugrul_ozkok",   KEY_NAME: "Ertuğrul Özkök",   KEY_SOURCE: "scrape_10haber", KEY_SCRAPE_URL: "https://10haber.net/yazarlar/ertugrul-ozkok/"},
     {KEY_ID: "ali_bayramoglu",   KEY_NAME: "Ali Bayramoğlu",   KEY_SOURCE: "scrape_karar", KEY_SCRAPE_URL: "https://www.karar.com/yazarlar/ali-bayramoglu"},
@@ -306,25 +306,42 @@ def find_from_sabah(author: dict) -> Optional[dict]:
 def find_from_altayli(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
     if not soup: return None
+    
+    # URL'lerde tarih "2026-04-07" formatında geçiyor
     today_str = datetime.now(TR_TZ).date().strftime("%Y-%m-%d")
 
-    # 🔥 BEST PRACTICE: Class'a güvenme. İçinde bugünün tarihi geçen HERHANGİ bir linki ara.
-    for a in soup.select("a[href]"):
-        href = a.get("href", "")
+    for a_tag in soup.select("a[href]"):
+        href = a_tag.get("href", "")
         
-        # Linkin içinde hem bugünün tarihi (örn: 2026-04-06) hem de 'fatih-altayli' geçiyorsa kesin o yazıdır!
-        if today_str in href and "fatih-altayli" in href:
-            # Başlığı alırken HTML etiketlerinden ayırarak temizliyoruz
-            title = a.get("title") or a.get_text(separator=" ", strip=True)
+        # 🔥 KRİTİK KONTROL: Linkin içinde hem "fatih-altayli" hem de BUGÜNÜN tarihi var mı?
+        if "fatih-altayli" in href and today_str in href:
             
-            if not title or len(title) < 5:
+            # Kategori anasayfası linklerine (".../kose-yazilari") takılmamak için önlem:
+            if "kose-yazilari" in href.split('/')[-1]:
                 continue
-                
+
+            # --------- YAZI KESİNLİKLE BUGÜNÜN İSE ---------
+
+            # Başlık bulma: Görseldeki yapıya göre başlık span.blog-info-title içinde
+            title_span = a_tag.select_one("span.blog-info-title")
+            
+            if title_span:
+                title = title_span.text.strip()
+            else:
+                # B Planı (Fallback): HTML yapısı bozulursa başlığı doğrudan URL'den çıkar
+                # Örn: .../gazeteci-ile-kavga-edilir-mi -> "Gazeteci ile kavga edilir mi"
+                try:
+                    slug = href.rstrip('/').split('/')[-1]
+                    title = " ".join(slug.split('-')).capitalize()
+                except:
+                    title = author[KEY_NAME]
+
             return {
                 KEY_URL: build_url(href, "https://fatihaltayli.com.tr"), 
                 KEY_TITLE: title[:100]
             }
-            
+
+    # Bugünün yazısı bulunamadıysa None dön
     return None
 
 
@@ -396,21 +413,44 @@ def find_from_t24(author: dict) -> Optional[dict]:
 def find_from_cumhuriyet(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
     if not soup: return None
-    today = datetime.now(TR_TZ).date()
-    today_str, today_day_str = str(today), str(today.day)
+    
+    # Bugünün tarihini Cumhuriyet'in formatında alıyoruz: Örn: "07.04.2026"
+    today_str = datetime.now(TR_TZ).strftime("%d.%m.%Y")
 
-    for a in soup.select("div#articles-container a[href]"):
-        title_div = a.select_one("div.font-semibold, div.line-clamp-2")
-        if not title_div:
+    # Makaleler div#articles-container içindeki a etiketlerinde yer alıyor
+    for a_tag in soup.select("div#articles-container a[href]"):
+        
+        # 🔥 KRİTİK ÇÖZÜM: Karmaşık Tailwind class'larına güvenmiyoruz. 
+        # A etiketinin içindeki tüm metinde bugünün tarihi ("07.04.2026") geçiyor mu kontrol ediyoruz.
+        if today_str not in a_tag.get_text():
             continue
 
-        time_tag = a.find("time") or a.select_one("div.text-xs")
-        if time_tag:
-            date_text = time_tag.get("datetime", "") or time_tag.text
-            if today_str not in date_text and today_day_str not in date_text:
-                continue
+        # --------- YAZI BUGÜNÜN İSE ---------
+        href = a_tag.get("href", "")
+        if not href:
+            continue
 
-        return {KEY_URL: build_url(a.get("href", ""), "https://www.cumhuriyet.com.tr"), KEY_TITLE: title_div.text.strip()[:100]}
+        # Başlık bulma: Genelde h2, h3 veya kalın fontlu div içinde olur
+        title_tag = a_tag.select_one("h3, h2, div.font-semibold, div.font-bold, h1")
+        
+        if title_tag:
+            title = title_tag.text.strip()
+        else:
+            # EĞER başlık HTML'den çekilemezse, URL'den türetmek harika bir B Planıdır.
+            # Örn: URL ".../2015-tekrarlanamaz-2492926" -> Çıktı: "2015 tekrarlanamaz"
+            try:
+                slug = href.split('/')[-1] # "2015-tekrarlanamaz-2492926"
+                title_parts = slug.split('-')[:-1] # Sondaki id'yi at: ["2015", "tekrarlanamaz"]
+                title = " ".join(title_parts).capitalize()
+            except:
+                title = author[KEY_NAME]
+
+        return {
+            KEY_URL: build_url(href, "https://www.cumhuriyet.com.tr"), 
+            KEY_TITLE: title[:100]
+        }
+
+    # Bugünün yazısı bulunamadıysa direkt None dön (Bildirim atılmaz)
     return None
 
 
@@ -431,40 +471,141 @@ def find_from_mahfi(author: dict) -> Optional[dict]:
         return {KEY_URL: build_url(a.get("href", ""), "https://www.mahfiegilmez.com"), KEY_TITLE: a.text.strip()[:100]}
     return None
 
-
 def find_from_fotomac(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
     if not soup: return None
-    today_day_str = str(datetime.now(TR_TZ).date().day)
+    
+    today = datetime.now(TR_TZ).date()
+    
+    TR_MONTHS = {
+        "ocak": 1, "şubat": 2, "mart": 3, "nisan": 4, "mayıs": 5, "haziran": 6,
+        "temmuz": 7, "ağustos": 8, "eylül": 9, "ekim": 10, "kasım": 11, "aralık": 12,
+        "subat": 2, "mayis": 5, "agustos": 8, "eylul": 9, "kasim": 11, "aralik": 12
+    }
 
+    # Görseldeki HTML yapısı: div.archive-item
     for item in soup.select("div.archive-item"):
-        date_tag = item.select_one("span.text-date, span.date")
-        if date_tag and today_day_str not in date_tag.text:
+        # Tarih: span.text-date -> Örn: "06 Nisan 2026 | Pazartesi"
+        date_tag = item.select_one("span.text-date")
+        if not date_tag:
+            continue
+            
+        raw_date = date_tag.text.strip()
+        # Önce "|" karakterinden bölüp sadece tarihi alıyoruz: "06 Nisan 2026"
+        clean_date = raw_date.split("|")[0].strip()
+        
+        try:
+            # "06", "Nisan", "2026" olarak parçalıyoruz
+            parts = clean_date.split()
+            if len(parts) >= 3:
+                day = int(parts[0])
+                month_str = parts[1].lower()
+                year = int(parts[2])
+                
+                month = TR_MONTHS.get(month_str, 0)
+                if month > 0:
+                    article_date = date_type(year, month, day)
+                    
+                    # 🔥 KESİN KONTROL: Eğer tarih BUGÜN değilse direkt pas geç!
+                    if article_date != today:
+                        continue
+                else:
+                    continue
+            else:
+                continue
+        except (ValueError, IndexError, TypeError):
+            # Parse edilemeyen bozuk tarih gelirse risk alma, pas geç
             continue
 
-        a, h3 = item.find("a"), (item.find("h3", id="article-title") or item.find("h3"))
-        if not a:
+        # --------- EĞER BURAYA KADAR GELDİYSEK YAZI KESİNLİKLE BUGÜNÜNDÜR ---------
+        
+        a_tag = item.find("a")
+        if not a_tag: 
             continue
+            
+        href = a_tag.get("href", "")
+        if not href:
+            continue
+        
+        # Başlık: h3#article-title
+        h3_tag = item.find("h3", id="article-title") or item.find("h3")
+        title = h3_tag.text.strip() if h3_tag else author[KEY_NAME]
+        
+        return {
+            KEY_URL: build_url(href, "https://www.fotomac.com.tr"), 
+            KEY_TITLE: title[:100]
+        }
 
-        return {KEY_URL: build_url(a.get("href", ""), "https://www.fotomac.com.tr"), KEY_TITLE: h3.text.strip()[:100] if h3 else author[KEY_NAME]}
+    # Döngü bitti ve bugüne ait yazı bulunamadıysa None dön (Bildirim atılmaz)
     return None
 
 
 def find_from_star(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
     if not soup: return None
-    today_day_str = str(datetime.now(TR_TZ).date().day)
+    
+    today = datetime.now(TR_TZ).date()
+    
+    TR_MONTHS = {
+        "ocak": 1, "şubat": 2, "mart": 3, "nisan": 4, "mayıs": 5, "haziran": 6,
+        "temmuz": 7, "ağustos": 8, "eylül": 9, "ekim": 10, "kasım": 11, "aralık": 12,
+        "subat": 2, "mayis": 5, "agustos": 8, "eylul": 9, "kasim": 11, "aralik": 12
+    }
 
+    # Makaleler <ul class="main..."> içindeki <li> etiketlerinde tutuluyor
     for li in soup.select("ul.main li"):
         date_div = li.select_one("div.date")
-        if date_div and today_day_str not in date_div.text:
+        if not date_div:
+            continue
+            
+        # 🔥 KRİTİK ÇÖZÜM: Star gazetesi tarihlerde &nbsp; (\xa0) kullanıyor.
+        # Önce bu görünmez karakterleri standart boşluğa çevirip temizliyoruz.
+        raw_date = date_div.text.replace("\xa0", " ").strip()
+        
+        try:
+            # "4", "Nisan", "2026" olarak güvenle parçalıyoruz
+            parts = raw_date.split()
+            if len(parts) >= 3:
+                day = int(parts[0])
+                month_str = parts[1].lower()
+                year = int(parts[2])
+                
+                month = TR_MONTHS.get(month_str, 0)
+                if month > 0:
+                    article_date = date_type(year, month, day)
+                    
+                    # 🔥 KESİN KONTROL: Eğer tarih BUGÜN değilse pas geç
+                    if article_date != today:
+                        continue
+                else:
+                    continue
+            else:
+                continue
+        except (ValueError, IndexError, TypeError):
+            # Parse edilemeyen yapı gelirse risk alma
             continue
 
-        a, title_div = li.find("a"), li.select_one("div.font-size-20")
-        if not a:
+        # --------- YAZI KESİNLİKLE BUGÜNÜN İSE ---------
+        
+        # İlk <a> etiketi makalenin kendisine gider
+        a_tag = li.find("a")
+        if not a_tag:
             continue
+            
+        href = a_tag.get("href", "")
+        if not href:
+            continue
+            
+        # Görseldeki yapıya göre başlık div.font-size-20 içinde
+        title_div = li.select_one("div.font-size-20")
+        title = title_div.text.strip() if title_div else author[KEY_NAME]
 
-        return {KEY_URL: build_url(a.get("href", ""), "https://m.star.com.tr"), KEY_TITLE: title_div.text.strip()[:100] if title_div else author[KEY_NAME]}
+        return {
+            KEY_URL: build_url(href, "https://m.star.com.tr"), 
+            KEY_TITLE: title[:100]
+        }
+
+    # Bugünün yazısı yoksa None dön (Bildirim atılmaz)
     return None
 
 
@@ -511,41 +652,87 @@ def find_from_habervakti(author: dict) -> Optional[dict]:
         return {KEY_URL: build_url(a.get("href", ""), "https://www.habervakti.com"), KEY_TITLE: a.text.strip()[:100]}
     return None
 
-
 def find_from_nihal(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
     if not soup: return None
-    today = datetime.now(TR_TZ).date()
-    today_str, today_day_str = str(today), str(today.day)
+    
+    # Habertürk tarihleri doğrudan ISO formatında yazıyor.
+    # Bugünün tam tarihini alıyoruz: "2026-04-07"
+    today_str = datetime.now(TR_TZ).strftime("%Y-%m-%d")
 
-    for li in soup.select("div#infinite-data li, ul.articles-list li"):
-        date_p = li.select_one("p, span, div.date")
-        if date_p and today_str not in date_p.text and today_day_str not in date_p.text:
+    # Görseldeki DOM yapısı: div#infinite-data altındaki li etiketleri
+    for li in soup.select("div#infinite-data li"):
+        
+        # 🔥 KRİTİK ÇÖZÜM: Sadece "7" rakamını değil, 
+        # tam tarihi ("2026-04-07") bloğun içindeki metinde arıyoruz.
+        if today_str not in li.get_text():
             continue
 
-        a = li.select_one("h3 a, h2 a")
-        if not a:
+        # --------- YAZI KESİNLİKLE BUGÜNÜN İSE ---------
+
+        a_tag = li.select_one("a[href]")
+        if not a_tag: 
+            continue
+            
+        href = a_tag.get("href", "")
+        if not href:
             continue
 
-        return {KEY_URL: build_url(a.get("href", ""), "https://www.haberturk.com"), KEY_TITLE: a.text.strip()[:100]}
+        # Görselde başlığın h3 etiketinde, class="text-2xl..." ile yazıldığını görüyoruz.
+        h3_tag = li.select_one("h3")
+        title = h3_tag.text.strip() if h3_tag else author[KEY_NAME]
+
+        return {
+            KEY_URL: build_url(href, "https://www.haberturk.com"), 
+            KEY_TITLE: title[:100]
+        }
+
+    # Bugünün yazısı yoksa None dön (Bildirim atılmaz)
     return None
 
 
 def find_from_yeniakit(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
     if not soup: return None
+    
+    # "2026-04-07" formatında bugünün tarihini alıyoruz
     today_str = str(datetime.now(TR_TZ).date())
 
+    # Mobil sitede makaleler <section class="article"> içinde listeleniyor
     for section in soup.select("section.article"):
-        time_tag = section.select_one("time[datetime]")
-        if time_tag and time_tag.get("datetime", "")[:10] != today_str:
+        time_tag = section.select_one("time.article-datetime")
+        if not time_tag:
             continue
 
-        a, h1 = section.find("a"), section.select_one("h1.title")
-        if not a:
+        # 🔥 KRİTİK ÇÖZÜM: Parametredeki ("2018...") sahte tarihi DEĞİL, 
+        # ekranda yazan gerçek metni alıyoruz: "2026-04-07 01:00:00"
+        raw_date_text = time_tag.text.strip()
+        
+        # İlk 10 karakteri alarak saati atıyoruz ("2026-04-07")
+        article_date_str = raw_date_text[:10]
+
+        # Tarih BUGÜN değilse pas geç
+        if article_date_str != today_str:
             continue
 
-        return {KEY_URL: build_url(a.get("href", ""), "https://m.yeniakit.com.tr"), KEY_TITLE: h1.text.strip()[:100] if h1 else author[KEY_NAME]}
+        # --------- YAZI BUGÜNÜN İSE ---------
+        a_tag = section.find("a")
+        if not a_tag:
+            continue
+            
+        href = a_tag.get("href", "")
+        if not href:
+            continue
+
+        # Başlık h1.title içinde
+        h1_tag = section.select_one("h1.title")
+        title = h1_tag.text.strip() if h1_tag else author[KEY_NAME]
+
+        return {
+            KEY_URL: build_url(href, "https://m.yeniakit.com.tr"), 
+            KEY_TITLE: title[:100]
+        }
+
     return None
 
 
