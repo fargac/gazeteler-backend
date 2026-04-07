@@ -56,7 +56,7 @@ AUTHORS = [
     {KEY_ID: "nedim_sener",      KEY_NAME: "Nedim Şener",      KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/nedim-sener/"},
     {KEY_ID: "ahmet_cakar",      KEY_NAME: "Ahmet Çakar",      KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/cakar/arsiv/getall"},
     {KEY_ID: "gurcan_bilgic",    KEY_NAME: "Gürcan Bilgiç",    KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/bilgic/arsiv/getall"},
-    {KEY_ID: "levent_tuzemen",   KEY_NAME: "Levent Tüzemen",   KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/levent_tuzemen/arsiv/getall"},
+    {KEY_ID: "levent_tuzemen",   KEY_NAME: "Levent Tüzemen",   KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/tuzemen/arsiv/getall"},
     {KEY_ID: "salih_tuna",       KEY_NAME: "Salih Tuna",       KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/salih-tuna/arsiv/getall"},
     {KEY_ID: "osman_muftuoglu",  KEY_NAME: "Osman Müftüoğlu",  KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/osman-muftuoglu/arsiv/getall"},
     {KEY_ID: "fatih_altayli",    KEY_NAME: "Fatih Altaylı",    KEY_SOURCE: "scrape_altayli", KEY_SCRAPE_URL: "https://fatihaltayli.com.tr/yazilar/fatih-altayli/kose-yazilari"},
@@ -825,7 +825,8 @@ def process_author(author: dict, sent_ref):
         )
 
         resp = messaging.send(msg)
-        log.info(f"  → Başarılı (Message ID): {resp}")
+        log.info(f"  → {author[KEY_NAME]} Başarılı (Message ID): {resp}")
+
 
         try:
             doc_ref.create({
