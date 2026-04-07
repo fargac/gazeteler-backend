@@ -50,15 +50,15 @@ AUTHORS = [
     {KEY_ID: "murat_bardakci", KEY_NAME: "Murat Bardakçı", KEY_SOURCE: "rss", "rss": "https://www.haberturk.com/rss/kategori/yazarlar.xml", "match": "Murat Bardakçı"},
 
     # ── Diğer Siteler (Scrape) ───────────────────────────────────────────────
-    {KEY_ID: "ahmet_hakan",      KEY_NAME: "Ahmet Hakan",      KEY_SOURCE: "scrape_hurriyet", KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/"},
-    {KEY_ID: "abdulkadir_selvi", KEY_NAME: "Abdülkadir Selvi", KEY_SOURCE: "scrape_hurriyet", KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/"},
-    {KEY_ID: "osman_muftuoglu",  KEY_NAME: "Osman Müftüoğlu",  KEY_SOURCE: "scrape_hurriyet", KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/"},
-    {KEY_ID: "fatih_cekirge",    KEY_NAME: "Fatih Çekirge",    KEY_SOURCE: "scrape_hurriyet", KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/"},
-    {KEY_ID: "nedim_sener",      KEY_NAME: "Nedim Şener",      KEY_SOURCE: "scrape_hurriyet", KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/"},
-    {KEY_ID: "ahmet_cakar",      KEY_NAME: "Ahmet Çakar",      KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar"},
-    {KEY_ID: "gurcan_bilgic",    KEY_NAME: "Gürcan Bilgiç",    KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar"},
-    {KEY_ID: "levent_tuzemen",   KEY_NAME: "Levent Tüzemen",   KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar"},
-    {KEY_ID: "salih_tuna",       KEY_NAME: "Salih Tuna",       KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar"},
+    {KEY_ID: "ahmet_hakan",      KEY_NAME: "Ahmet Hakan",      KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/ahmet-hakan/"},
+    {KEY_ID: "abdulkadir_selvi", KEY_NAME: "Abdülkadir Selvi", KEY_SOURCE: "scrape_hurriyet", KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/abdulkadir-selvi/"},
+    {KEY_ID: "osman_muftuoglu",  KEY_NAME: "Osman Müftüoğlu",  KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/osman-muftuoglu/"},
+    {KEY_ID: "fatih_cekirge",    KEY_NAME: "Fatih Çekirge",    KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/fatih-cekirge/"},
+    {KEY_ID: "nedim_sener",      KEY_NAME: "Nedim Şener",      KEY_SOURCE: "scrape_hurriyet",KEY_SCRAPE_URL: "https://www.hurriyet.com.tr/yazarlar/nedim-sener/"},
+    {KEY_ID: "ahmet_cakar",      KEY_NAME: "Ahmet Çakar",      KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/cakar/arsiv/getall"},
+    {KEY_ID: "gurcan_bilgic",    KEY_NAME: "Gürcan Bilgiç",    KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/bilgic/arsiv/getall"},
+    {KEY_ID: "levent_tuzemen",   KEY_NAME: "Levent Tüzemen",   KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/levent_tuzemen/arsiv/getall"},
+    {KEY_ID: "salih_tuna",       KEY_NAME: "Salih Tuna",       KEY_SOURCE: "scrape_sabah", KEY_SCRAPE_URL: "https://m.sabah.com.tr/yazarlar/salih-tuna/arsiv/getall"},
     {KEY_ID: "fatih_altayli",    KEY_NAME: "Fatih Altaylı",    KEY_SOURCE: "scrape_altayli", KEY_SCRAPE_URL: "https://fatihaltayli.com.tr/yazilar/fatih-altayli/kose-yazilari"},
     {KEY_ID: "ertugrul_ozkok",   KEY_NAME: "Ertuğrul Özkök",   KEY_SOURCE: "scrape_10haber", KEY_SCRAPE_URL: "https://10haber.net/yazarlar/ertugrul-ozkok/"},
     {KEY_ID: "ali_bayramoglu",   KEY_NAME: "Ali Bayramoğlu",   KEY_SOURCE: "scrape_karar", KEY_SCRAPE_URL: "https://www.karar.com/yazarlar/ali-bayramoglu"},
@@ -78,7 +78,7 @@ AUTHORS = [
 
 # --- AĞ VE OTURUM YAPILANDIRMASI ---
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
     "Upgrade-Insecure-Requests": "1"
@@ -193,36 +193,113 @@ def find_from_rss(author: dict) -> Optional[dict]:
 
 
 def find_from_hurriyet(author: dict) -> Optional[dict]:
+    """
+    Hürriyet'in her yazarın kendi sayfasını scrape eder.
+    Yapı: div.highlighted-box[data-article-link] → tarih kontrolü → başlık
+    author dict'inde KEY_SCRAPE_URL her yazar için ayrı olmalı.
+    Örn: "https://www.hurriyet.com.tr/yazarlar/abdulkadir-selvi/"
+    """
     soup = get_soup(author[KEY_SCRAPE_URL])
-    if not soup: return None
-    for box in soup.select("a.author-box"):
-        name_tag = box.select_one("span.name")
-        if not name_tag or author[KEY_NAME].lower() not in name_tag.text.lower():
-            continue
+    if not soup:
+        return None
 
-        href = box.get("href", "")
+    today = datetime.now(TR_TZ).date()
+    TR_MONTHS = {
+        "Ocak": 1, "Şubat": 2, "Mart": 3, "Nisan": 4,
+        "Mayıs": 5, "Haziran": 6, "Temmuz": 7, "Ağustos": 8,
+        "Eylül": 9, "Ekim": 10, "Kasım": 11, "Aralık": 12
+    }
+
+    for box in soup.select("div.highlighted-box[data-article-link]"):
+        # Tarih kontrolü
+        date_div = box.select_one("div.date")
+        if date_div:
+            try:
+                parts = date_div.text.strip().split()
+                # "7 Nisan 2026" formatı
+                if len(parts) == 3:
+                    article_date = date_type(
+                        int(parts[2]),
+                        TR_MONTHS.get(parts[1], 0),
+                        int(parts[0])
+                    )
+                    if article_date != today:
+                        continue
+            except (ValueError, TypeError, IndexError):
+                pass
+
+        href = box.get("data-article-link", "")
+        if not href:
+            a_tag = box.select_one("h2 a[href]")
+            href = a_tag.get("href", "") if a_tag else ""
+
         if not href:
             continue
 
-        title_tag = box.select_one("span.title")
-        return {KEY_URL: build_url(href, "https://www.hurriyet.com.tr"), KEY_TITLE: title_tag.text.strip() if title_tag else author[KEY_NAME]}
+        # Başlık
+        title_tag = box.select_one("h2 a")
+        title = title_tag.get("title") or (title_tag.get_text(strip=True) if title_tag else author[KEY_NAME])
+
+        return {
+            KEY_URL: build_url(href, "https://www.hurriyet.com.tr"),
+            KEY_TITLE: title[:100]
+        }
+
     return None
 
 
 def find_from_sabah(author: dict) -> Optional[dict]:
+    """
+    m.sabah.com.tr/yazarlar/{slug}/arsiv/getall
+    Yapı: ul.articleList > li > a[href, title] > i (tarih) + strong (başlık)
+    """
     soup = get_soup(author[KEY_SCRAPE_URL])
-    if not soup: return None
-    for li in soup.select("div.manset.writer ul li"):
-        name_tag = li.select_one("strong:not(.sub)")
-        if not name_tag or author[KEY_NAME].lower() not in name_tag.text.lower():
+    if not soup:
+        return None
+
+    today = datetime.now(TR_TZ).date()
+    TR_MONTHS = {
+        "Ocak": 1, "Şubat": 2, "Mart": 3, "Nisan": 4,
+        "Mayıs": 5, "Haziran": 6, "Temmuz": 7, "Ağustos": 8,
+        "Eylül": 9, "Ekim": 10, "Kasım": 11, "Aralık": 12
+    }
+
+    for li in soup.select("ul.articleList li"):
+        a = li.find("a")
+        if not a:
             continue
 
-        a_tag = li.find("a")
-        if not a_tag:
+        # Tarih kontrolü: <i>6 Nisan 2026 Pazartesi</i>
+        date_tag = a.find("i")
+        if date_tag:
+            try:
+                parts = date_tag.text.strip().split()
+                # "6 Nisan 2026 Pazartesi" → [0]=gün [1]=ay [2]=yıl [3]=gün_adı
+                article_date = date_type(
+                    int(parts[2]),
+                    TR_MONTHS.get(parts[1], 0),
+                    int(parts[0])
+                )
+                if article_date != today:
+                    continue
+            except (ValueError, TypeError, IndexError):
+                pass
+
+        href = a.get("href", "")
+        if not href:
             continue
 
-        title_tag = li.select_one("strong.sub")
-        return {KEY_URL: build_url(a_tag.get("href", ""), "https://www.sabah.com.tr"), KEY_TITLE: title_tag.text.strip() if title_tag else author[KEY_NAME]}
+        # Başlık: önce title attr, yoksa <strong>
+        title = a.get("title") or ""
+        if not title:
+            strong = a.find("strong")
+            title = strong.text.strip() if strong else author[KEY_NAME]
+
+        return {
+            KEY_URL: build_url(href, "https://www.sabah.com.tr"),
+            KEY_TITLE: title[:100]
+        }
+
     return None
 
 
@@ -282,17 +359,39 @@ def find_from_karar(author: dict) -> Optional[dict]:
 def find_from_t24(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
     if not soup: return None
-    today_day_str = str(datetime.now(TR_TZ).date().day)
+    
+    today = datetime.now(TR_TZ).date()
+    TR_MONTHS = {
+        "Ocak": 1, "Şubat": 2, "Mart": 3, "Nisan": 4,
+        "Mayıs": 5, "Haziran": 6, "Temmuz": 7, "Ağustos": 8,
+        "Eylül": 9, "Ekim": 10, "Kasım": 11, "Aralık": 12
+    }
 
     for a in soup.select("section.aramakartalanimobil a[href]"):
         date_tag = a.select_one("div.aramakartalanimobilcardtarih")
-        if date_tag and today_day_str not in date_tag.text:
+        if date_tag:
+            try:
+                # "3 Nisan 2026 00:00" → split → ["3", "Nisan", "2026", "00:00"]
+                parts = date_tag.text.strip().split()
+                article_date = date_type(
+                    int(parts[2]),
+                    TR_MONTHS.get(parts[1], 0),
+                    int(parts[0])
+                )
+                if article_date != today:
+                    continue
+            except (ValueError, TypeError, IndexError):
+                pass
+
+        h4 = a.select_one("h4") or a.select_one("div.aramakartalanimobilcardbaslik")
+        if not h4:
             continue
-
-        h4 = a.select_one("h4, div.aramakartalanimobilcardbaslik")
-        return {KEY_URL: build_url(a.get("href", ""), "https://t24.com.tr"), KEY_TITLE: h4.text.strip()[:100] if h4 else author[KEY_NAME]}
+            
+        return {
+            KEY_URL: build_url(a.get("href", ""), "https://t24.com.tr"),
+            KEY_TITLE: h4.text.strip()[:100]
+        }
     return None
-
 
 def find_from_cumhuriyet(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
@@ -379,13 +478,21 @@ def find_from_nefes(author: dict) -> Optional[dict]:
         if time_tag and today_day_str not in time_tag.text:
             continue
 
-        a, title_span = article.find("a"), article.select_one("span:not(.article-icon)")
+        a = article.find("a")
         if not a:
             continue
 
-        return {KEY_URL: build_url(a.get("href", ""), "https://nefes.com.tr"), KEY_TITLE: title_span.text.strip()[:100] if title_span else author[KEY_NAME]}
-    return None
+        # 🔥 BEST PRACTICE: Span sınıflarına güvenmek yerine en stabil olan 'title' parametresini alıyoruz.
+        raw_title = a.get("title") or a.get_text(separator=" ", strip=True)
+        
+        # Eğer text'i alırsak tarihin de metne yapışmasını engellemek için tarihi metinden siliyoruz
+        title = raw_title.replace(time_tag.text, "").strip() if time_tag else raw_title
 
+        return {
+            KEY_URL: build_url(a.get("href", ""), "https://nefes.com.tr"), 
+            KEY_TITLE: title[:100]
+        }
+    return None
 
 def find_from_habervakti(author: dict) -> Optional[dict]:
     soup = get_soup(author[KEY_SCRAPE_URL])
@@ -510,12 +617,24 @@ def process_author(author: dict, sent_ref):
         topic_name = f"yazar_{author[KEY_ID]}"
         log.info(f"  → {author[KEY_NAME]}: '{topic_name}' konusuna mesaj atılıyor...")
 
+        body_text = article.get(KEY_TITLE, "").strip()
+        if not body_text or len(body_text) < 2:
+            body_text = "Yeni köşe yazısı yayımlandı. Okumak için dokunun."
+
         msg = messaging.Message(
-            notification=messaging.Notification(title=author[KEY_NAME], body=article[KEY_TITLE]),
+            notification=messaging.Notification(
+                title=author[KEY_NAME], 
+                body=body_text
+            ),
             data={"url": article[KEY_URL]},
             topic=topic_name,
-            android=messaging.AndroidConfig(priority="high", notification=messaging.AndroidNotification(sound="default")),
-            apns=messaging.APNSConfig(payload=messaging.APNSPayload(aps=messaging.Aps(sound="default"))),
+            android=messaging.AndroidConfig(
+                priority="high", 
+                notification=messaging.AndroidNotification(sound="default")
+            ),
+            apns=messaging.APNSConfig(
+                payload=messaging.APNSPayload(aps=messaging.Aps(sound="default", content_available=True))
+            )
         )
 
         resp = messaging.send(msg)

@@ -2,8 +2,13 @@ name: Yazar Bildirimleri
 
 on:
   schedule:
-     # Her 3 saatte bir kontrol eder
-     - cron: '0 */3 * * *'
+    # 🔥 BEST PRACTICE: Github Actions UTC zaman dilimi kullanır (TR saati = UTC + 3)
+    # 04:30 UTC -> 07:30 TR Saati
+    # 08:30 UTC -> 11:30 TR Saati
+    # 12:30 UTC -> 15:30 TR Saati
+    # 16:30 UTC -> 19:30 TR Saati
+    # Bu ayar sayesinde gece 19:30'dan ertesi sabah 07:30'a kadar SIFIR bildirim gider (Quiet Hours).
+    - cron: '30 4,8,12,16 * * *'
   workflow_dispatch:
 
 jobs:
