@@ -2,7 +2,7 @@ name: Gezo Gündem Günün Özeti Otomasyonu
 
 on:
   schedule:
-    - cron: '0 18 * * *' # Türkiye saati ile 21:00
+    - cron: '15 17 * * *' # Türkiye saati ile 20:15
   workflow_dispatch:
 
 permissions:
