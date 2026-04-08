@@ -8,7 +8,8 @@ on:
     # 12:30 UTC -> 15:30 TR Saati
     # 16:30 UTC -> 19:30 TR Saati
     # Bu ayar sayesinde gece 19:30'dan ertesi sabah 07:30'a kadar SIFIR bildirim gider (Quiet Hours).
-    - cron: '30 4,8,12,16 * * *'
+    # - cron: '30 4,8,12,16 * * *'
+    - cron: '30 5 * * *'
   workflow_dispatch:
 
 jobs:
