@@ -5,7 +5,7 @@ on:
   schedule:
     # ⚠️ GitHub UTC saatini kullanır. Türkiye (UTC+3) saatiyle 00:00'da 
     # çalışması için UTC saatiyle 21:00 yazmalıyız.
-    - cron: '0 21 * * *'
+    #- cron: '0 21 * * *' 3 ay sonra aç burayı
   workflow_dispatch: # İstediğin zaman GitHub'dan tek tıkla manuel çalıştırmak için
 
 jobs:
