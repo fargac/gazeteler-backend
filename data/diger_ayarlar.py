@@ -13,7 +13,7 @@ APP_GENERAL_CONFIG = {
     "shareText": "📱 Uygulamayı İndir:",
     "shareUrlAndroid": "https://play.google.com/store/apps/details?id=com.denizbatu.gazeteler.activity",
     "shareUrlIos": "" ,
-    "mansetProvider": "haber7.com"
+    "mansetProvider": "www.haber7.com"
 }
 
 PIYASA_CONFIG = {
