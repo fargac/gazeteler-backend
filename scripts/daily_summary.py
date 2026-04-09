@@ -97,10 +97,25 @@ def save_to_cdn(summary_data, doc_id):
 
 
 def send_to_firebase(summary_data, doc_id):
+    # Bildirim akşam ~21:00'da gönderiliyor.
+    # 3 saatlik TTL ile gece 00:00'a kadar teslim edilemezse FCM/APNs otomatik iptal eder.
+    # Sabah uyanan kullanıcıya dünün özeti gitmiş olmaz.
+    ttl_seconds = 3 * 60 * 60  # 3 saat = 10800 saniye
+
     message = messaging.Message(
         notification=messaging.Notification(
             title=summary_data['push_title'],
             body=summary_data['push_body']
+        ),
+        android=messaging.AndroidConfig(
+            ttl=timedelta(hours=3),
+            priority="high"
+        ),
+        apns=messaging.APNSConfig(
+            headers={
+                # Unix timestamp: şu an + 3 saat
+                'apns-expiration': str(int(time.time()) + ttl_seconds)
+            }
         ),
         data={"type": "daily_summary", "date": doc_id},
         topic="daily_summary"
@@ -133,26 +148,20 @@ if __name__ == "__main__":
             print(f"🔄 Deneme {deneme + 1}/4...")
             summary = generate_ai_summary(raw_news)
 
-            # 🔥 FIX: save_to_cdn ve send_to_firebase aynı try bloğunda.
-            # İkisi de başarılı olursa break, biri başarısız olursa
-            # CDN'e yazılmış ama bildirim gitmemiş durumu oluşmaz.
             save_to_cdn(summary, doc_id)
             send_to_firebase(summary, doc_id)
 
             print("✅ TÜM İŞLEMLER BAŞARILI!")
-            break  # İkisi de başarılıysa döngüden çık
+            break
 
         except Exception as e:
             last_error = e
             print(f"❌ Deneme {deneme + 1} başarısız: {e}")
 
-            # Son denemeyse tekrar bekleme, direkt çık
             if deneme < 3:
                 wait_seconds = 15 * (deneme + 1)
                 print(f"⏳ {wait_seconds} saniye bekleniyor...")
                 time.sleep(wait_seconds)
     else:
-        # 🔥 FIX: for/else — döngü break olmadan biterse burası çalışır.
-        # Yani 4 denemenin tümü başarısız oldu demektir.
         print(f"🚨 4 denemenin tamamı başarısız oldu! Son hata: {last_error}")
-        exit(1)  # GitHub Actions'a hata sinyali gönder (workflow kırmızıya döner)
+        exit(1)
