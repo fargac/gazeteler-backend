@@ -12,7 +12,8 @@ APP_GENERAL_CONFIG = {
     # 🔥 YENİ: Dinamik Paylaşım Ayarları eklendi
     "shareText": "📱 Uygulamayı İndir:",
     "shareUrlAndroid": "https://play.google.com/store/apps/details?id=com.denizbatu.gazeteler.activity",
-    "shareUrlIos": "" 
+    "shareUrlIos": "" ,
+    "mansetProvider": "haber7.com"
 }
 
 PIYASA_CONFIG = {
