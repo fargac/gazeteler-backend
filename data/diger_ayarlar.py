@@ -37,7 +37,7 @@ PIYASA_CONFIG = {
 ADS_CONFIG = {
    "interstitial_frequency": 5,    # Kaç tıklamada bir geçiş reklamı çıkacak
     "interstitial_cooldown": 60,    # İki geçiş reklamı arası minimum saniye
-    "app_open_cooldown": 30,        # Açılış reklamı arası minimum dakika
+    "app_open_cooldown": 5,        # Açılış reklamı arası minimum dakika
     "native_ad_interval": 6         # Akışta kaç haberde bir reklam çıkacak
 }
 
