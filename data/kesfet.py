@@ -46,7 +46,7 @@ KESFET_CONFIG = {
         {"id": "dha", "name": "DHA", "link": "https://www.dha.com.tr"}
     ],
     "spor": [
-        {"id": "fotomac", "name": "Fotomaç", "link": "https://m.fotomac.com.tr"},
+        {"id": "fotomac", "name": "Fotomaç", "link": "https://www.fotomac.com.tr/"},
         {"id": "fanatik", "name": "Fanatik", "link": "https://www.fanatik.com.tr"},
         {"id": "aspor", "name": "A Spor", "link": "https://www.aspor.com.tr/?ismobile=true"},
         {"id": "ntvspor", "name": "NTV Spor", "link": "https://www.ntvspor.net/"},
