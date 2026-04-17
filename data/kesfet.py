@@ -120,7 +120,7 @@ KESFET_CONFIG = {
     {"id": "fatih_cekirge", "name": "Fatih Çekirge", "link": "https://www.hurriyet.com.tr/yazarlar/fatih-cekirge/"},
     {"id": "gurcan_bilgic", "name": "Gürcan Bilgiç", "link": "https://www.sabah.com.tr/yazarlar/spor/bilgic"},
     {"id": "huseyin_gulerce", "name": "Hüseyin Gülerce", "link": "https://www.star.com.tr/yazarlar/huseyin-gulerce/"},
-    {"id": "ismail_saymaz", "name": "İsmail Saymaz", "link": "https://www.sozcu.com.tr/ismail-saymaz-a36"},
+    {"id": "ismail_saymaz", "name": "İsmail Saymaz", "link": "https://halktv.com.tr/yazar/ismail-saymaz-33657"},
     {"id": "levent_tuzemen", "name": "Levent Tüzemen", "link": "https://www.sabah.com.tr/yazarlar/spor/tuzemen"},
     {"id": "mahfi_egilmez", "name": "Mahfi Eğilmez", "link": "https://www.mahfiegilmez.com/"},
     {"id": "murat_bardakci", "name": "Murat Bardakçı", "link": "https://m.haberturk.com/htyazar/murat-bardakci"},
