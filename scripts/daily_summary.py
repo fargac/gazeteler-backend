@@ -75,7 +75,8 @@ def generate_ai_summary(news_data):
     return json.loads(response.text)
 
 
-def save_to_cdn(summary_data, doc_id):
+# 🔥 YENİ: scanned_count (toplam taranan haber) parametresi eklendi
+def save_to_cdn(summary_data, doc_id, scanned_count):
     output_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         'cdn_data', 'summaries'
@@ -83,11 +84,19 @@ def save_to_cdn(summary_data, doc_id):
     os.makedirs(output_dir, exist_ok=True)
 
     file_path = os.path.join(output_dir, f"{doc_id}.json")
+    
+    # 🔥 YENİ: Dosyanın oluşturulduğu anın Türkiye saati (Confidence Indicator için)
+    tr_tz = timezone(timedelta(hours=3))
+    now_tr = datetime.now(tr_tz)
+    updated_at = now_tr.strftime("%H:%M")
 
+    # 🔥 CDN Payload'ına eski sürümleri bozmayan ekstra metrikler eklendi
     cdn_payload = {
         "date": doc_id,
         "items": summary_data['detailed_summary'],
-        "sources": summary_data['sources_used']
+        "sources": summary_data['sources_used'],
+        "scanned_count": scanned_count,
+        "updated_at": updated_at
     }
 
     with open(file_path, 'w', encoding='utf-8') as f:
@@ -97,10 +106,7 @@ def save_to_cdn(summary_data, doc_id):
 
 
 def send_to_firebase(summary_data, doc_id):
-    # Bildirim akşam ~21:00'da gönderiliyor.
-    # 3 saatlik TTL ile gece 00:00'a kadar teslim edilemezse FCM/APNs otomatik iptal eder.
-    # Sabah uyanan kullanıcıya dünün özeti gitmiş olmaz.
-    ttl_seconds = 3 * 60 * 60  # 3 saat = 10800 saniye
+    ttl_seconds = 3 * 60 * 60  # 3 saat
 
     message = messaging.Message(
         notification=messaging.Notification(
@@ -113,7 +119,6 @@ def send_to_firebase(summary_data, doc_id):
         ),
         apns=messaging.APNSConfig(
             headers={
-                # Unix timestamp: şu an + 3 saat
                 'apns-expiration': str(int(time.time()) + ttl_seconds)
             }
         ),
@@ -140,6 +145,7 @@ if __name__ == "__main__":
 
     tr_tz = timezone(timedelta(hours=3))
     doc_id = datetime.now(tr_tz).strftime("%Y-%m-%d")
+    total_scanned = len(raw_news) # 🔥 Tarama sayısı değişkene alındı
 
     last_error = None
 
@@ -148,7 +154,8 @@ if __name__ == "__main__":
             print(f"🔄 Deneme {deneme + 1}/4...")
             summary = generate_ai_summary(raw_news)
 
-            save_to_cdn(summary, doc_id)
+            # 🔥 total_scanned parametresi eklendi
+            save_to_cdn(summary, doc_id, total_scanned)
             send_to_firebase(summary, doc_id)
 
             print("✅ TÜM İŞLEMLER BAŞARILI!")
