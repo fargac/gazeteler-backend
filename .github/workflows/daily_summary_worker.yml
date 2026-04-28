@@ -1,10 +1,10 @@
 name: Gezo Gündem Günün Özeti Otomasyonu
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Google Cloud Scheduler burayı tetikliyor
 
 permissions:
-  contents: write # 🔥 YENİ: Commit atabilmek için izin gerekli
+  contents: write
 
 jobs:
   run-summary:
@@ -13,22 +13,46 @@ jobs:
       - name: Kodları Çek
         uses: actions/checkout@v4
 
-      - name: Python Kur
+      - name: Python Kur ve Cache Ayarla
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip' # 🔥 PRO UPGRADE: Pip Cache (requirements.txt gerektirir)
 
       - name: Kütüphaneleri Yükle
+        # Eğer requirements.txt varsa: pip install -r requirements.txt yapabilirsiniz.
         run: pip install firebase-admin google-genai feedparser python-dateutil
 
-      - name: Günün Özetini Hazırla ve Diske Yaz
+      - name: Günün Özetini Hazırla (Python)
         env:
           FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python scripts/daily_summary.py
 
+      - name: Latest.json Dosyasını Güvenle Oluştur
+        run: |
+          # 🔥 1. EN GÜNCEL DOSYAYI BUL (Timezone hatasından kurtul)
+          LATEST_FILE=$(ls -t cdn_data/summaries/*.json | head -n 1)
+
+          if [ -z "$LATEST_FILE" ]; then
+            echo "❌ HATA: Hiç özet dosyası bulunamadı!"
+            exit 1
+          fi
+
+          # 🔥 2. GÜVENLİK KONTROLÜ (Dünün dosyasını yutturmamak için)
+          # Dosyanın içinde bugünün tarihi (UTC veya Local fark etmeksizin) geçiyor mu?
+          export TZ="Europe/Istanbul"
+          if ! grep -q "$(date +'%Y-%m-%d')" "$LATEST_FILE"; then
+            echo "❌ HATA: Yeni veri üretilememiş (eski dosya tespit edildi). latest.json güncellenmeyecek!"
+            exit 1
+          fi
+
+          # 🔥 3. KUSURSUZ KOPYALAMA
+          cp "$LATEST_FILE" cdn_data/summaries/latest.json
+          echo "✅ BAŞARILI: latest.json güncellendi -> Kaynak: $LATEST_FILE"
+
       - name: Yeni Özeti Github'a Pushla (CDN için)
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "📝 feat(cdn): Günün Özeti eklendi"
+          commit_message: "📝 feat(cdn): Günün Özeti ve latest.json güncellendi"
           file_pattern: 'cdn_data/summaries/*.json'
