@@ -75,7 +75,8 @@ def generate_ai_summary(news_data):
     return json.loads(response.text)
 
 
-# 🔥 YENİ: scanned_count (toplam taranan haber) parametresi eklendi
+# daily_summary.py içindeki save_to_cdn fonksiyonunu bul ve bununla değiştir:
+
 def save_to_cdn(summary_data, doc_id, scanned_count):
     output_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -85,18 +86,27 @@ def save_to_cdn(summary_data, doc_id, scanned_count):
 
     file_path = os.path.join(output_dir, f"{doc_id}.json")
     
-    # 🔥 YENİ: Dosyanın oluşturulduğu anın Türkiye saati (Confidence Indicator için)
+    # 🇹🇷 Türkiye saatine göre zaman hesaplamaları
     tr_tz = timezone(timedelta(hours=3))
     now_tr = datetime.now(tr_tz)
-    updated_at = now_tr.strftime("%H:%M")
+    yesterday_tr = now_tr - timedelta(hours=24)
 
-    # 🔥 CDN Payload'ına eski sürümleri bozmayan ekstra metrikler eklendi
+    # 💎 PRO SEVİYE: ISO 8601 formatında tam zaman damgaları (Örn: 2026-04-28T20:15:00+03:00)
+    generated_at = now_tr.isoformat(timespec='seconds')
+    range_start = yesterday_tr.isoformat(timespec='seconds')
+    range_end = now_tr.isoformat(timespec='seconds')
+
+    # Eski sürümleri (sadece items ve sources okuyanları) bozmadan yeni metrikleri ekliyoruz
     cdn_payload = {
         "date": doc_id,
-        "items": summary_data['detailed_summary'],
-        "sources": summary_data['sources_used'],
+        "generated_at": generated_at,
+        "range": {
+            "start": range_start,
+            "end": range_end
+        },
         "scanned_count": scanned_count,
-        "updated_at": updated_at
+        "items": summary_data['detailed_summary'],
+        "sources": summary_data['sources_used']
     }
 
     with open(file_path, 'w', encoding='utf-8') as f:
