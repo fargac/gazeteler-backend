@@ -8,6 +8,11 @@ from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
 from google import genai
 
+# 🛡️ ANTI-BAN (ENGEL ÖNLEYİCİ) KİMLİK
+# Haber sitelerinin güvenlik duvarları bizi normal bir Chrome kullanıcısı sansın.
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+feedparser.USER_AGENT = USER_AGENT
+
 SOURCES = [
     {"name": "Habertürk", "url": "https://www.haberturk.com/rss/manset.xml"},
     {"name": "Sözcü",     "url": "https://www.sozcu.com.tr/feeds-son-dakika"},
@@ -24,6 +29,10 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
+# 🛡️ IDEMPOTENCY (MÜKERRER İŞLEM KORUMASI)
+def check_if_already_run(doc_id):
+    doc_ref = db.collection("daily_summaries").document(doc_id)
+    return doc_ref.get().exists
 
 def get_todays_news():
     today_news_list = []
@@ -47,7 +56,6 @@ def get_todays_news():
             print(f"❌ {source['name']} okunurken hata: {e}")
 
     return today_news_list
-
 
 def generate_ai_summary(news_data):
     news_text = "\n".join([f"- [{n['source']}] {n['title']}" for n in news_data])
@@ -74,9 +82,6 @@ def generate_ai_summary(news_data):
     )
     return json.loads(response.text)
 
-
-# daily_summary.py içindeki save_to_cdn fonksiyonunu bul ve bununla değiştir:
-
 def save_to_cdn(summary_data, doc_id, scanned_count):
     output_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -86,17 +91,14 @@ def save_to_cdn(summary_data, doc_id, scanned_count):
 
     file_path = os.path.join(output_dir, f"{doc_id}.json")
     
-    # 🇹🇷 Türkiye saatine göre zaman hesaplamaları
     tr_tz = timezone(timedelta(hours=3))
     now_tr = datetime.now(tr_tz)
     yesterday_tr = now_tr - timedelta(hours=24)
 
-    # 💎 PRO SEVİYE: ISO 8601 formatında tam zaman damgaları (Örn: 2026-04-28T20:15:00+03:00)
     generated_at = now_tr.isoformat(timespec='seconds')
     range_start = yesterday_tr.isoformat(timespec='seconds')
     range_end = now_tr.isoformat(timespec='seconds')
 
-    # Eski sürümleri (sadece items ve sources okuyanları) bozmadan yeni metrikleri ekliyoruz
     cdn_payload = {
         "date": doc_id,
         "generated_at": generated_at,
@@ -113,7 +115,6 @@ def save_to_cdn(summary_data, doc_id, scanned_count):
         json.dump(cdn_payload, f, ensure_ascii=False, separators=(',', ':'))
 
     print(f"📦 CDN dosyası oluşturuldu: {file_path}")
-
 
 def send_to_firebase(summary_data, doc_id):
     ttl_seconds = 3 * 60 * 60  # 3 saat
@@ -133,7 +134,7 @@ def send_to_firebase(summary_data, doc_id):
             }
         ),
         data={"type": "daily_summary", "date": doc_id},
-        topic="daily_summary"
+        topic="daily_summary"  # 100K kullanıcı için topic kullanımı best practice'tir.
     )
     messaging.send(message)
     print("🚀 Bildirim başarıyla fırlatıldı!")
@@ -145,18 +146,22 @@ def send_to_firebase(summary_data, doc_id):
     })
     print("💾 Yedek olarak Firestore'a kaydedildi!")
 
-
 if __name__ == "__main__":
+    tr_tz = timezone(timedelta(hours=3))
+    doc_id = datetime.now(tr_tz).strftime("%Y-%m-%d")
+
+    # 🔥 KONTROL NOKTASI: Rapor zaten üretilmiş mi?
+    if check_if_already_run(doc_id):
+        print(f"✅ {doc_id} tarihli özet ZATEN VERİTABANINDA MEVCUT. Mükerrer bildirim engellendi. İşlem durduruluyor.")
+        exit(0)
+
     raw_news = get_todays_news()
 
     if len(raw_news) <= 5:
         print("⚠️ Yeterli haber bulunamadı, işlem durduruldu.")
         exit(0)
 
-    tr_tz = timezone(timedelta(hours=3))
-    doc_id = datetime.now(tr_tz).strftime("%Y-%m-%d")
-    total_scanned = len(raw_news) # 🔥 Tarama sayısı değişkene alındı
-
+    total_scanned = len(raw_news)
     last_error = None
 
     for deneme in range(4):
@@ -164,7 +169,6 @@ if __name__ == "__main__":
             print(f"🔄 Deneme {deneme + 1}/4...")
             summary = generate_ai_summary(raw_news)
 
-            # 🔥 total_scanned parametresi eklendi
             save_to_cdn(summary, doc_id, total_scanned)
             send_to_firebase(summary, doc_id)
 
