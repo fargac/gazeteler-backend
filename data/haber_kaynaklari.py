@@ -172,16 +172,16 @@ NEWS_SOURCES = [
         }
     },
     {
-        "id": "ensonhaber",
-        "name": "En Son Haber",
-        "rss": "https://www.ensonhaber.com/rss/gundem.xml",
+        "id": "ahaber",
+        "name": "A Haber",
+        "rss": "https://www.ahaber.com.tr/rss/gundem.xml",
         "maxItems": 15,
         "excludeCategories": [CAT_RESMI, CAT_ADV, "3. Sayfa", "Magazin", "Otomobil", "Yaşam", "Futbol", "Medya"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
             "link": RULE_LINK_STD,
-            "image": RULE_IMAGE_MEDIA,
+            "image": RULE_IMAGE_ENCLOSURE,
             "dateTag": RULE_DATE_PUBDATE,
             "dateFormat": DATE_FORMAT_STD
         }
