@@ -1,5 +1,10 @@
 name: Gezo Gündem Günün Özeti Otomasyonu
 
+# 🔥 EKLENECEK BLOK:
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false # Önceki bitmeden yenisini başlatma
+  
 on:
   workflow_dispatch: # Google Cloud Scheduler burayı tetikliyor
 

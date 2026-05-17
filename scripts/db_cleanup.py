@@ -9,37 +9,31 @@ from datetime import datetime, timezone, timedelta
 FIRESTORE_BATCH_LIMIT = 500
 
 
+# scripts/db_cleanup.py içindeki batch_delete fonksiyonunu BUNUNLA DEĞİŞTİR:
+
 def batch_delete(db, query):
     """
-    Verilen Firestore sorgusundaki tüm dökümanları batch'ler halinde siler.
-
-    🔥 FIX: Eski versiyon tüm dökümanları stream() ile RAM'e yüklüyor,
-    sonra tek tek delete() çağırıyordu. Bu iki probleme yol açıyordu:
-      1. Çok sayıda kayıt varsa memory spike (tüm docs RAM'de)
-      2. Her delete() ayrı bir network isteği (yavaş)
-
-    Yeni versiyon: 500'lük batch'ler halinde siler.
-      - Sabit bellek kullanımı (sadece 500 döküman aynı anda RAM'de)
-      - Her 500 silme tek bir network isteği (Firestore batch write)
+    🔥 GERÇEK PAGINATION & BATCH MİMARİSİ
+    Sadece FIRESTORE_BATCH_LIMIT (500) kadar dökümanı RAM'e alır.
+    Silme bitince bir sonraki 500'ü çeker. Sunucu RAM'i asla şişmez.
     """
     deleted_total = 0
-    batch = db.batch()
-    batch_count = 0
 
-    for doc in query.stream():
-        batch.delete(doc.reference)
-        batch_count += 1
-        deleted_total += 1
-
-        if batch_count == FIRESTORE_BATCH_LIMIT:
-            batch.commit()
-            batch = db.batch()
-            batch_count = 0
-
-    # Kalan dökümanları commit et (500'ün katı olmayan son grup)
-    if batch_count > 0:
+    while True:
+        # Sadece 500 tanesini RAM'e al (Sihirli kelime: .limit() )
+        docs = list(query.limit(FIRESTORE_BATCH_LIMIT).stream())
+        
+        if not docs:
+            break # Silinecek döküman kalmadı, döngüyü bitir
+            
+        batch = db.batch()
+        for doc in docs:
+            batch.delete(doc.reference)
+        
         batch.commit()
-
+        deleted_total += len(docs)
+        print(f"🧹 {len(docs)} döküman silindi. Toplam: {deleted_total}")
+        
     return deleted_total
 
 

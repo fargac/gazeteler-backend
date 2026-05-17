@@ -1,5 +1,10 @@
 name: Yazar Bildirimleri
 
+# 🔥 EKLENECEK BLOK:
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false # Önceki bitmeden yenisini başlatma
+
 on:
   schedule:
     # 🔥 BEST PRACTICE: Github Actions UTC zaman dilimi kullanır (TR saati = UTC + 3)

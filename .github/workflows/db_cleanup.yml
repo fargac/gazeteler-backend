@@ -1,6 +1,11 @@
 # .github/workflows/db_cleanup.yml
 name: Veritabanı Temizliği (Garbage Collector)
 
+# 🔥 EKLENECEK BLOK:
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false # Önceki bitmeden yenisini başlatma
+  
 on:
     # schedule:
     # ⚠️ GitHub UTC saatini kullanır. Türkiye (UTC+3) saatiyle 00:00'da 

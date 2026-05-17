@@ -785,6 +785,9 @@ FINDERS = {
 # ─────────────────────────────────────────────────────────────────────────────
 
 def process_author(author: dict, sent_ref):
+    # 🔥 ANTI-BAN: Her thread rastgele 0.5 ile 2.5 saniye arası beklesin
+    # Bu sayede 10 istek saniyesi saniyesine aynı anda sunucuya çarpmaz.
+    time.sleep(random.uniform(0.5, 2.5))
     log.info(f"🔍 Kontrol ediliyor: {author[KEY_NAME]}")
     try:
         finder = FINDERS.get(author[KEY_SOURCE])
