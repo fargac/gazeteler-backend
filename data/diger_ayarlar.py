@@ -13,7 +13,9 @@ APP_GENERAL_CONFIG = {
     "shareText": "📱 Uygulamayı İndir:",
     "shareUrlAndroid": "https://play.google.com/store/apps/details?id=com.denizbatu.gazeteler.activity",
     "shareUrlIos": "" ,
-    "mansetProvider": "haber7.com"
+    "mansetProvider": "haber7.com",
+    "imageProxyUrl": "https://wsrv.nl/",
+    "imageProxyEnabled": True # CDN çökerse bunu False yap, uygulama orjinal resimleri çekmeye başlasın!
 }
 
 PIYASA_CONFIG = {
