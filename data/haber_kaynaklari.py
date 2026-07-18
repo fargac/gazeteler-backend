@@ -245,20 +245,5 @@ NEWS_SOURCES = [
             "dateTag": RULE_DATE_PUBDATE,
             "dateFormat": DATE_FORMAT_STD
         }
-    },
-    {
-        "id": "haberler",
-        "name": "Haberler.com",
-        "rss": "https://rss.haberler.com/rssnew.aspx",
-        "maxItems": 15,
-        "excludeCategories": [CAT_RESMI, CAT_ADV],
-        "rules": {
-            "item": RULE_ITEM_RSS,
-            "title": RULE_TITLE_STD,
-            "link": RULE_LINK_STD,
-            "image": RULE_IMAGE_ENCLOSURE,
-            "dateTag": RULE_DATE_PUBDATE,
-            "dateFormat": DATE_FORMAT_STD
-        }
     }
 ]
