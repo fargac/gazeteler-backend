@@ -260,5 +260,35 @@ NEWS_SOURCES = [
             "dateTag": RULE_DATE_PUBDATE,
             "dateFormat": DATE_FORMAT_STD
         }
+    },
+    {
+        "id": "haberler",
+        "name": "Haberler.com",
+        "rss": "https://rss.haberler.com/rssnew.aspx",
+        "maxItems": 15,
+        "excludeCategories": [CAT_RESMI, CAT_ADV],
+        "rules": {
+            "item": RULE_ITEM_RSS,
+            "title": RULE_TITLE_STD,
+            "link": RULE_LINK_STD,
+            "image": RULE_IMAGE_ENCLOSURE,
+            "dateTag": RULE_DATE_PUBDATE,
+            "dateFormat": DATE_FORMAT_STD
+        }
     }
 ]
+
+# 🔥 Uygulama genel ayarları (appGeneralConfig) — RN tarafında ConfigSyncManager
+# bunu olduğu gibi useStore().appGeneralConfig'e yazıyor, OnboardingScreen.tsx da
+# appGeneralConfig.onboarding_default_sources'ı okuyor. Bir kaynak (ör. sondakika)
+# bozulduğunda yeni app sürümü yayınlamadan burası güncellenip config.json'a
+# basılması yeterli.
+#
+# ⚠️ Bu dict'in cdn_data/config.json çıktısına "appGeneralConfig" anahtarı
+# altında dahil edilmesi gerekiyor — o export/build script'i elimde değil,
+# bu yüzden burada sadece kaynak veri olarak tanımlıyorum.
+APP_GENERAL_CONFIG = {
+    # sondakika RSS'i kırık olduğu için varsayılanlardan çıkarıldı, yerine
+    # gerçekten çalışan haberler.com kondu.
+    "onboarding_default_sources": ["ensonhaber", "haberler"]
+}
