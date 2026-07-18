@@ -202,21 +202,6 @@ NEWS_SOURCES = [
         }
     },
     {
-        "id": "sondakika",
-        "name": "Son Dakika",
-        "rss": "https://rss.sondakika.com/rss_standart.asp",
-        "maxItems": 15,
-        "excludeCategories": [CAT_RESMI, CAT_ADV],
-        "rules": {
-            "item": RULE_ITEM_RSS,
-            "title": RULE_TITLE_STD,
-            "link": RULE_LINK_STD,
-            "image": RULE_IMAGE_MEDIA,
-            "dateTag": RULE_DATE_PUBDATE,
-            "dateFormat": DATE_FORMAT_STD
-        }
-    },
-    {
         "id": "ntvspor",
         "name": "NTV Spor",
         "rss": "https://www.ntvspor.net/rss/anasayfa",
