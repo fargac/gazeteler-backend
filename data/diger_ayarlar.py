@@ -15,7 +15,8 @@ APP_GENERAL_CONFIG = {
     "shareUrlIos": "" ,
     "mansetProvider": "haber7.com",
     "imageProxyUrl": "https://wsrv.nl/",
-    "imageProxyEnabled": True # CDN çökerse bunu False yap, uygulama orjinal resimleri çekmeye başlasın!
+    "imageProxyEnabled": True ,# CDN çökerse bunu False yap, uygulama orjinal resimleri çekmeye başlasın!
+    "onboarding_default_sources": ["ensonhaber", "haberler"]
 }
 
 PIYASA_CONFIG = {
