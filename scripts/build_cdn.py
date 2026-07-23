@@ -1,5 +1,5 @@
 import json
-import hashlib
+import time
 import os
 import sys
 
@@ -11,6 +11,13 @@ from data.kesfet import KESFET_CONFIG
 from data.diger_ayarlar import PIYASA_CONFIG, MANSETLER_CONFIG, ADS_CONFIG, APP_GENERAL_CONFIG
 
 def build_static_files():
+    # Derleme anındaki eşsiz zaman damgası (Unix Timestamp)
+    current_version = str(int(time.time()))
+
+    # appGeneralConfig içine config_version değerini güvenli bir şekilde ekle
+    app_general = APP_GENERAL_CONFIG.copy() if APP_GENERAL_CONFIG else {}
+    app_general["config_version"] = current_version
+
     data = {
         "haber_kaynaklari": NEWS_SOURCES,
         "piyasa": PIYASA_CONFIG,
@@ -18,12 +25,8 @@ def build_static_files():
         "kesfet": KESFET_CONFIG,
         "takimlar": TAKIMLAR,
         "ads": ADS_CONFIG,
-        "appGeneralConfig": APP_GENERAL_CONFIG
+        "appGeneralConfig": app_general
     }
-    
-    # 🔥 BEST PRACTICE: MD5 yerine SHA-256
-    config_str = json.dumps(data, sort_keys=True)
-    version_hash = hashlib.sha256(config_str.encode()).hexdigest()[:32] # MD5 gibi 32 karakter
     
     output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cdn_data')
     os.makedirs(output_dir, exist_ok=True)
@@ -32,9 +35,9 @@ def build_static_files():
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
         
     with open(os.path.join(output_dir, 'version.json'), 'w', encoding='utf-8') as f:
-        json.dump({"version": version_hash}, f, ensure_ascii=False)
+        json.dump({"version": current_version}, f, ensure_ascii=False)
         
-    print(f"✅ Başarılı! cdn_data klasörüne dosyalar yazıldı. Versiyon: {version_hash}")
+    print(f"✅ Başarılı! cdn_data klasörüne dosyalar yazıldı. Versiyon: {current_version}")
 
 if __name__ == '__main__':
     build_static_files()
