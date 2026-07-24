@@ -176,7 +176,7 @@ NEWS_SOURCES = [
         "name": "En Son Haber",
         "rss": "https://www.ensonhaber.com/rss/gundem.xml",
         "maxItems": 15,
-        "excludeCategories": [CAT_RESMI, CAT_ADV, "3. Sayfa", "Magazin", "Otomobil", "Yaşam", "Futbol", "Medya"],
+        "excludeCategories": [CAT_RESMI, CAT_ADV, "3. Sayfa", "Magazin", "Otomobil", "Yaşam", "Futbol", "Medya","abcxd"],
         "rules": {
             "item": RULE_ITEM_RSS,
             "title": RULE_TITLE_STD,
