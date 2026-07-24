@@ -10,42 +10,37 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build-and-commit:
+  build-and-upload:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Repoyu Klonla
         uses: actions/checkout@v4
-        
+
       - name: Python Ortamını Kur
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-          
+
       - name: CDN Scriptini Çalıştır
         run: python scripts/build_cdn.py
-        
-      - name: Değişiklikleri Commit Et ve Pushla
-        id: commit
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add cdn_data/
-          if git diff-index --quiet HEAD; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "Değişiklik yok, commit atlanıyor."
-          else
-            git commit -m "chore: Auto-generate CDN JSON dosyaları"
-            git push
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
 
-      - name: jsDelivr Cache Temizle
-        if: steps.commit.outputs.changed == 'true'
+      - name: R2'ye Yükle
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
         run: |
-          curl -s "https://purge.jsdelivr.net/gh/fargac/gazeteler-backend@main/cdn_data/version.json"
-          curl -s "https://purge.jsdelivr.net/gh/fargac/gazeteler-backend@main/cdn_data/config.json"
+          aws s3 cp cdn_data/config.json s3://gezo-data/cdn_data/config.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
+          aws s3 cp cdn_data/version.json s3://gezo-data/cdn_data/version.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
+
+      - name: Cloudflare Cache Temizle (Purge)
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/purge_cache" \
+               -H "Authorization: Bearer ${{ secrets.CF_PURGE_TOKEN }}" \
+               -H "Content-Type: application/json" \
+               --data '{"files": ["https://api.gezoist.com/cdn_data/version.json", "https://api.gezoist.com/cdn_data/config.json"]}'
           echo "✅ CDN Önbelleği temizlendi!"
