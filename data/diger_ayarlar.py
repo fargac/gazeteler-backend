@@ -12,10 +12,10 @@ APP_GENERAL_CONFIG = {
     # 🔥 YENİ: Dinamik Paylaşım Ayarları eklendi
     "shareText": "📱 Uygulamayı İndir:",
     "shareUrlAndroid": "https://play.google.com/store/apps/details?id=com.denizbatu.gazeteler.activity",
-    "shareUrlIos": "" ,
+    "shareUrlIos": "",
     "mansetProvider": "haber7.com",
     "imageProxyUrl": "https://wsrv.nl/",
-    "imageProxyEnabled": True ,# CDN çökerse bunu False yap, uygulama orjinal resimleri çekmeye başlasın!
+    "imageProxyEnabled": True,  # CDN çökerse bunu False yap, uygulama orjinal resimleri çekmeye başlasın!
     "onboarding_default_sources": ["ensonhaber", "haberler"]
 }
 
@@ -32,16 +32,16 @@ PIYASA_CONFIG = {
         "ceyrek": {"key": "ceyrek-altin", "subKey": KEY_SATIS, "format": FORMAT_TR_CURRENCY}
     },
     "weather_api_base": "https://api.open-meteo.com/v1/forecast",
-    
+
     # 🔥 YENİ: Konum bulma API'si artık backend'den gönderiliyor
     "geocode_api_base": "https://api.bigdatacloud.net/data/reverse-geocode-client"
 }
 
 ADS_CONFIG = {
-   "interstitial_frequency": 5,    # Kaç tıklamada bir geçiş reklamı çıkacak
-    "interstitial_cooldown": 60,    # İki geçiş reklamı arası minimum saniye
-    "app_open_cooldown": 240,        # Açılış reklamı arası minimum dakika
-    "native_ad_interval": 6         # Akışta kaç haberde bir reklam çıkacak
+    "interstitial_frequency": 8,     # Kaç tıklamada bir geçiş reklamı çıkacak
+    "interstitial_cooldown": 240,    # İki tam ekran reklam arası minimum saniye (4 dk)
+    "app_open_cooldown": 240,        # Açılış reklamı arası minimum dakika (4 saat)
+    "native_ad_interval": 8          # Akışta kaç haberde bir reklam çıkacak
 }
 
 base = "https://i13.haber7.net/haber7/gazete"
