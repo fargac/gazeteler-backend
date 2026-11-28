@@ -16,7 +16,7 @@ KESFET_CONFIG = {
         {"id": "cumhuriyet", "name": "Cumhuriyet", "link": "https://www.cumhuriyet.com.tr/"},
         {"id": "yeni_akit", "name": "Yeni Akit", "link": "https://m.yeniakit.com.tr"},
         {"id": "milli_gazete", "name": "Milli Gazete", "link": "https://www.milligazete.com.tr/"},
-        {"id": "yenicag", "name": "Yeni Çağ", "link": "https://www.yenicaggazetesi.com.tr/mobi/"},
+        {"id": "yenicag", "name": "Yeni Çağ", "link": "https://www.yenicaggazetesi.com/"},
         {"id": "dirilis_postasi", "name": "Diriliş Postası", "link": "https://www.dirilispostasi.com/"},
         {"id": "dunya", "name": "Dünya", "link": "https://www.dunya.com/"},
         {"id": "birgun", "name": "Birgün", "link": "https://www.birgun.net/"},
